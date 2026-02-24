@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "NSRest_MCP_V1": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7149",
+      "launchBrowser": false
+    }
+  }
+}
