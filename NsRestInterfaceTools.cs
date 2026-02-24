@@ -1,6 +1,7 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace NS_MCP.Function;
 
@@ -12,7 +13,7 @@ public class NsRestInterfaceTools
     private static readonly string AZURE_FUNCTIONS_KEY = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_KEY") ?? "taGSZsPQqaJdc3EXuOiYO1AwGezCbRWk63jd6cD39NdEAzFuacvr2w==";
     private static readonly string BASE_URL = Environment.GetEnvironmentVariable("AZURE_FUNCTION_APP_URL") ?? "https://nsrestinterface-dev.azurewebsites.net";
 
-    public NsRestInterfaceTools(ILogger<executeSuiteQL> logger)
+    public NsRestInterfaceTools(ILogger<NsRestInterfaceTools> logger)
     {
         _logger = loggerFactory.CreateLogger<NsRestInterfaceTools>();
         _http = new HttpClient();
