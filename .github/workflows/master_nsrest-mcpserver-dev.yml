@@ -37,6 +37,6 @@ jobs:
         uses: Azure/functions-action@v1
         with:
           app-name: nsrest-mcpserver-dev
-          slot-name: Production
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_118D22B68FBE4197ADF853947E42B000 }}
           package: ./publish
+
