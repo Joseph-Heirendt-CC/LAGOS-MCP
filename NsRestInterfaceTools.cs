@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using 
 
 namespace NS_MCP.Function;
 
@@ -20,30 +21,29 @@ public class NsRestInterfaceTools
         _http = new HttpClient();
     }
 
-    [Function(nameof(ExecuteSuiteQL))]
+	[Function(nameof(ExecuteSuiteQL))]
 	public async Task<string> ExecuteSuiteQL(
-    	[McpToolTrigger(
-        	"executeSuiteQL",
-        	"Execute a NetSuite SuiteQL query via nsrestinterface-dev using the netsuiteSuiteqlQuery endpoint.")]
-    	ToolInvocationContext context)
+		[McpToolTrigger(
+			"executeSuiteQL",
+			"Execute a NetSuite SuiteQL query via nsrestinterface-dev using the netsuiteSuiteqlQuery endpoint.")]
+		string argsJson,
+		FunctionContext context)
 	{
     	// -----------------------------
     	// 1) Parse MCP tool arguments
     	// -----------------------------
-    	var argsJson = context?.Data ?? "{}";
-    	SuiteQlArgs args;
-
-    	try
-    	{
-        	args = JsonSerializer.Deserialize<SuiteQlArgs>(argsJson, JsonOptions.Default)
-               	?? throw new InvalidOperationException("Tool arguments were empty or invalid.");
-    	}
-    	catch (Exception ex)
-    	{
-        	_logger.LogWarning(ex, "Invalid MCP tool arguments JSON.");
-        	return McpError("InvalidArguments",
-            	"Arguments must be JSON: { \"query\": \"...\", \"limit\": <int?>, \"offset\": <int?> }");
-    	}
+			SuiteQlArgs args;
+			try
+			{
+				args = JsonSerializer.Deserialize<SuiteQlArgs>(argsJson, JsonOptions.Default)
+					?? throw new InvalidOperationException("Tool arguments were empty or invalid.");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "Invalid MCP tool arguments JSON.");
+				return McpError("InvalidArguments",
+					"Arguments must be JSON: { \"query\": \"...\", \"limit\": <int?>, \"offset\": <int?> }");
+			}
 
     	if (string.IsNullOrWhiteSpace(args.Query))
         	return McpError("InvalidArguments", "Missing required field: query");
