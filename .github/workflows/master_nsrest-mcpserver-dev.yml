@@ -32,6 +32,11 @@ jobs:
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
+          
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
@@ -42,6 +47,4 @@ jobs:
           package: ./output
           scm-do-build-during-deployment: false
           enable-oryx-build: false
-
-
 
