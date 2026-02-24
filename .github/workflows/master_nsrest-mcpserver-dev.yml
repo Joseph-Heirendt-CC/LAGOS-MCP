@@ -1,6 +1,7 @@
-# Docs: https://github.com/Azure/functions-action
+# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
+# More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy dotnet project to Azure Function App - nsrest-mcpserver-dev
+name: Build and deploy dotnet core project to Azure Function App - nsrest-mcpserver-dev
 
 on:
   push:
@@ -9,34 +10,33 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
+  DOTNET_VERSION: '8.0.x' # set this to the dotnet version to use
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
+      - name: 'Checkout GitHub Action'
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release
-
-      - name: Publish Azure Functions app
-        run: dotnet publish --configuration Release --output ./publish
-
-      - name: Deploy to Azure Function App
+      - name: 'Resolve Project Dependencies Using Dotnet'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
+          popd
+      
+      - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
+        id: fa
         with:
-          app-name: nsrest-mcpserver-dev
+          app-name: 'nsrest-mcpserver-dev'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_118D22B68FBE4197ADF853947E42B000 }}
-          package: ./publish
-
