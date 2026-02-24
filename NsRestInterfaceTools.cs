@@ -15,7 +15,7 @@ public class NsRestInterfaceTools
 
     public NsRestInterfaceTools(ILogger<NsRestInterfaceTools> logger)
     {
-        _logger = loggerFactory.CreateLogger<NsRestInterfaceTools>();
+        _logger = logger;
         _http = new HttpClient();
     }
 
@@ -29,7 +29,7 @@ public class NsRestInterfaceTools
     	// -----------------------------
     	// 1) Parse MCP tool arguments
     	// -----------------------------
-    	var argsJson = context?.ArgumentsJson ?? "{}";
+    	var argsJson = context?.Data ?? "{}";
     	SuiteQlArgs args;
 
     	try
