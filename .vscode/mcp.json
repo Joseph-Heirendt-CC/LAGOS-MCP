@@ -1,8 +1,13 @@
 {
-    "servers": {
-        "NSRest_MCP_V1-local-server": {
-            "type": "http",
-            "url": "http://localhost:7071/runtime/webhooks/mcp"
-        }
-    }
+	"servers": {
+		"NSRest_MCP_V1-local-server": {
+			"type": "http",
+			"url": "http://localhost:7071/runtime/webhooks/mcp"
+		},
+		"remote-mcp-server": {
+			"url": "https://premium-nsrest-mcp.azurewebsites.net/runtime/webhooks/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
 }
