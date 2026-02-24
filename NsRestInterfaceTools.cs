@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace NS_MCP.Function;
 
@@ -72,7 +73,7 @@ public class NsRestInterfaceTools
     	if (args.Limit is not null)  url += $"&limit={args.Limit.Value}";
     	if (args.Offset is not null) url += $"&offset={args.Offset.Value}";
 
-    	var http = _httpClientFactory.CreateClient("NsRestInterface");
+		var http = _http;
 
     	using var req = new HttpRequestMessage(HttpMethod.Post, url);
     	req.Headers.Add("x-functions-key", functionKey); // required per docs [1](https://citrincooperman.sharepoint.com/sites/MicrosoftPlatformTeam/Shared%20Documents/Integration%20and%20Development/Azure%20-%20NetSuite%20REST%20API%20Interface%20Project/Version%201/Azure_nsrestinterface_API_V1.html?web=1)[2](https://loop.cloud.microsoft/p/eyJ1IjoiaHR0cHM6Ly9jaXRyaW5jb29wZXJtYW4uc2hhcmVwb2ludC5jb20vY29udGVudHN0b3JhZ2UveDhGTk8teHRza3VDUlgyX2ZNVEhMVUFyc2V3UlZiaEd2S01kTTdtYzNpRT9uYXY9Y3owbE1rWmpiMjUwWlc1MGMzUnZjbUZuWlNVeVJuZzRSazVQSlRKRWVIUnphM1ZEVWxneUpUVkdaazFVU0V4VlFYSnpaWGRTVm1Kb1IzWkxUV1JOTjIxak0ybEZKbVE5WWlVeU1XcDVXR051SlRWR2RGWmlWVU5XZUVOMFJsUmxKVFZHYjJreU5DVTFSbXhhZUVkVVZWSk1ibHBPYUhCdGFFVmFaV2RMUjBneFdrZ3dlVEZTTkZBeFZ6Um9XbEoxY1hRbVpqMHdNVkpXVDA5Qk5sVlZOVmRQU2tSSlJGZEpVa1pLVnpSU1JFVklUbFl5V0RZMUptTTlKVEpHIn0%3D)
