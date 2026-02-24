@@ -7,6 +7,9 @@ namespace NS_MCP.Function;
 public class executeSuiteQL
 {
     private ILogger<executeSuiteQL> _logger;
+    private static readonly string AZURE_FUNCTIONS_KEY = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_KEY") ?? "Production";
+
+
 
     public executeSuiteQL(ILogger<executeSuiteQL> logger)
     {
