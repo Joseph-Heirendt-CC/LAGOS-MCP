@@ -3,7 +3,6 @@ using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Net.Http.Headers;
-using 
 
 namespace NS_MCP.Function;
 
