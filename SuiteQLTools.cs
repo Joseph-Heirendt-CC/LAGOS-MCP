@@ -72,7 +72,7 @@ public class SuiteQLTools(INetSuiteBusinessAppClient client, ILogger<SuiteQLTool
 
         logger.LogInformation("execute_suiteql raw arguments: {RawArgs}", rawArgs);
         logger.LogInformation("execute_suiteql argument keys: [{Keys}]",
-            string.Join(", ", toolCall.Arguments?.Keys ?? []));
+            string.Join(", ", toolCall.Arguments?.Keys ?? Enumerable.Empty<string>()));
 
         try
         {
@@ -91,7 +91,8 @@ public class SuiteQLTools(INetSuiteBusinessAppClient client, ILogger<SuiteQLTool
                 ["error"] = "ArgumentError",
                 ["message"] = ex.Message,
                 ["receivedKeys"] = new JsonArray(
-                    (toolCall.Arguments?.Keys.Select(JsonValue.Create) ?? []).ToArray<JsonNode?>())
+                    (toolCall.Arguments?.Keys ?? Enumerable.Empty<string>())
+                    .Select(k => (JsonNode?)JsonValue.Create(k)).ToArray())
             }.ToJsonString();
         }
         catch (Exception ex)
