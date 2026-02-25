@@ -13,10 +13,44 @@ public class SuiteQLTools(INetSuiteBusinessAppClient client, ILogger<SuiteQLTool
     [Function(nameof(ExecuteSuiteQL))]
     public async Task<string> ExecuteSuiteQL(
         [McpToolTrigger("execute_suiteql",
-            "Execute a SuiteQL SELECT query against NetSuite. " +
-            "Use this for complex searches, reporting, cross-record joins, and analytics. " +
-            "Returns a JSON object with 'items' (array of rows), 'totalResults', and 'hasMore'. " +
-            "Example: SELECT id, companyname, email FROM customer WHERE isinactive = 'F'")] ToolInvocationContext toolCall,
+            "Execute a raw SuiteQL SELECT query against NetSuite. " +
+            "Use this for complex searches, reporting, cross-record joins, and analytics not covered by the other structured tools. " +
+            "Returns a JSON object with 'items' (array of rows), 'count', and 'totalResults'. " +
+            "--- ROW LIMITING (REQUIRED) --- " +
+            "ALWAYS begin with SELECT TOP n. Never omit a row limit — unbounded queries against large tables will timeout. " +
+            "Recommended default: SELECT TOP 100. Hard max: 1000. " +
+            "--- SYNTAX RULES --- " +
+            "All string literals use single quotes: type = 'CustInvc'. " +
+            "Boolean fields use 'T' / 'F' strings, not true/false: voided = 'F'. " +
+            "Date literals use MM/DD/YYYY format: trandate >= '01/01/2025'. " +
+            "SYSDATE = current datetime. TRUNC(SYSDATE) = today with no time component. " +
+            "Use BUILTIN.DF(fieldname) to return the display label of any list or record field instead of its raw internal ID. " +
+            "All table and column names are lowercase in the NetSuite schema. " +
+            "--- COMMON TABLES & KEY COLUMNS --- " +
+            "customer: id, entityid, companyname, firstname, lastname, email, phone, isinactive, terms, subsidiary, salesrep, comments. " +
+            "transaction: id, tranid, trandate, duedate, type, status, entity, memo, foreigntotal, amountremaining, voided, posting, currency, terms. " +
+            "transactionline: transaction, uniquekey, item, quantity, rate, amount, description, taxrate1. " +
+            "item: id, itemid, displayname, salesdescription, type, baseprice, isinactive, subsidiary. " +
+            "employee: id, entityid, firstname, lastname, email, isinactive, department, supervisor. " +
+            "transactionaccountingline: transaction, account, amount, amountunpaid, paymentamountunused. " +
+            "--- TRANSACTION TYPE CODES (transaction.type) --- " +
+            "SalesOrd=Sales Order, CustInvc=Invoice, CustPymt=Customer Payment, CustCred=Credit Memo, " +
+            "ItemShip=Item Fulfillment, PurchOrd=Purchase Order, VendBill=Vendor Bill, VendPymt=Vendor Payment. " +
+            "--- COMMON JOIN PATTERNS --- " +
+            "Transactions for a customer: JOIN customer c ON c.id = t.entity. " +
+            "Line items on a transaction: JOIN transactionline tl ON tl.transaction = t.id. " +
+            "Item detail from a line: JOIN item i ON i.id = tl.item. " +
+            "AR aging detail: JOIN transactionaccountingline tal ON tal.transaction = t.id. " +
+            "--- SUPPORTED FUNCTIONS --- " +
+            "BUILTIN.DF(), SUM(), COUNT(), AVG(), MIN(), MAX(), COALESCE(), NVL(), " +
+            "CASE WHEN...THEN...ELSE...END, TRUNC(), TO_CHAR(), REPLACE(), LOWER(), UPPER(), LENGTH(). " +
+            "--- DO NOT USE --- " +
+            "LIMIT n (invalid — use SELECT TOP n), FETCH FIRST n ROWS ONLY (not supported), " +
+            "INSERT / UPDATE / DELETE (read-only endpoint), WITH / CTE syntax (not supported), " +
+            "stored procedures, subqueries in FROM clause, or temporary tables. " +
+            "--- EXAMPLE --- " +
+            "SELECT TOP 50 t.id, t.tranid, BUILTIN.DF(t.entity) AS customer, t.foreigntotal AS total, t.amountremaining " +
+            "FROM transaction t WHERE t.type = 'CustInvc' AND t.amountremaining > 0 ORDER BY t.duedate ASC")] ToolInvocationContext toolCall,
         FunctionContext context,
         CancellationToken ct)
     {
