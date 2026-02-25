@@ -40,10 +40,11 @@ public class CustomerTools(INetSuiteBusinessAppClient client, ILogger<CustomerTo
         var limit = toolCall.Arguments.GetOptionalInt("limit") ?? 50;
 
         var query = $"""
-            SELECT TOP({Math.Min(limit, 1000)}) id, entityid, companyname, email, phone, BUILTIN.DF(terms) AS terms, isinactive
+            SELECT id, entityid, companyname, email, phone, BUILTIN.DF(terms) AS terms, isinactive
             FROM customer
             WHERE {filter}
             ORDER BY entityid
+            LIMIT {Math.Min(limit, 1000)}
             """;
 
         logger.LogInformation("list_customers: filter={Filter}", filter);

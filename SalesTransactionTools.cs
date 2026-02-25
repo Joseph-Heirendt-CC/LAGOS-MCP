@@ -41,7 +41,7 @@ public class SalesTransactionTools(INetSuiteBusinessAppClient client, ILogger<Sa
         var limit = toolCall.Arguments.GetOptionalInt("limit") ?? 50;
 
         var query = $"""
-            SELECT TOP({Math.Min(limit, 1000)})
+            SELECT
                 t.id, t.tranid, t.trandate, t.duedate,
                 BUILTIN.DF(t.entity) AS customer,
                 BUILTIN.DF(t.status) AS status,
@@ -50,6 +50,7 @@ public class SalesTransactionTools(INetSuiteBusinessAppClient client, ILogger<Sa
             FROM transaction t
             WHERE t.type = 'SalesOrd' AND {filter}
             ORDER BY t.trandate DESC
+            LIMIT {Math.Min(limit, 1000)}
             """;
 
         logger.LogInformation("list_sales_orders: filter={Filter}", filter);
@@ -156,7 +157,7 @@ public class SalesTransactionTools(INetSuiteBusinessAppClient client, ILogger<Sa
     public async Task<string> ListInvoices(
         [McpToolTrigger("list_invoices",
             "List NetSuite invoices with optional SuiteQL filters. " +
-            "Returns invoice number, customer, date, due date, total, amount remaining, and status. " +
+            "Returns invoice number, customer, date, due date, total, and status. " +
             "Example filter: \"amountremaining > 0 AND duedate < SYSDATE\"")] ToolInvocationContext toolCall,
         FunctionContext context,
         CancellationToken ct)
@@ -165,16 +166,16 @@ public class SalesTransactionTools(INetSuiteBusinessAppClient client, ILogger<Sa
         var limit = toolCall.Arguments.GetOptionalInt("limit") ?? 50;
 
         var query = $"""
-            SELECT TOP({Math.Min(limit, 1000)})
+            SELECT
                 t.id, t.tranid AS invoiceNumber, t.trandate, t.duedate,
                 BUILTIN.DF(t.entity) AS customer,
                 t.foreigntotal AS total,
-                t.foreignamountunpaid AS balanceDue,
                 REPLACE(BUILTIN.DF(t.status), 'Invoice : ', '') AS status,
                 t.memo
             FROM transaction t
             WHERE t.type = 'CustInvc' AND {filter}
             ORDER BY t.trandate DESC
+            LIMIT {Math.Min(limit, 1000)}
             """;
 
         logger.LogInformation("list_invoices: filter={Filter}", filter);
