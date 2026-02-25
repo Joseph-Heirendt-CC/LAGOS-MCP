@@ -14,7 +14,7 @@ public class CustomerTools(INetSuiteBusinessAppClient client, ILogger<CustomerTo
         [McpToolTrigger("get_customer",
             "Retrieve a single NetSuite customer record by internal ID or external ID. " +
             "Use 'eid:EXTERNAL_ID' prefix for external IDs. " +
-            "Optionally supply 'fields' (comma-separated) to limit the response, e.g. 'entityId,companyName,email,balance,aging'.")] ToolInvocationContext toolCall,
+            "Optionally supply 'fields' (comma-separated) to limit the response, e.g. 'entityId,companyName,email,aging'.")] ToolInvocationContext toolCall,
         FunctionContext context,
         CancellationToken ct)
     {
@@ -40,8 +40,7 @@ public class CustomerTools(INetSuiteBusinessAppClient client, ILogger<CustomerTo
         var limit = toolCall.Arguments.GetOptionalInt("limit") ?? 50;
 
         var query = $"""
-            SELECT TOP({Math.Min(limit, 1000)}) id, entityid, companyname, email, phone,
-                   balance, BUILTIN.DF(terms) AS terms, isinactive
+            SELECT TOP({Math.Min(limit, 1000)}) id, entityid, companyname, email, phone, BUILTIN.DF(terms) AS terms, isinactive
             FROM customer
             WHERE {filter}
             ORDER BY entityid

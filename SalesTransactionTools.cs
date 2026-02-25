@@ -46,7 +46,7 @@ public class SalesTransactionTools(INetSuiteBusinessAppClient client, ILogger<Sa
                 BUILTIN.DF(t.entity) AS customer,
                 BUILTIN.DF(t.status) AS status,
                 t.foreigntotal AS total,
-                t.memo, t.ordpicked, t.billingstatus
+                t.memo, t.quantitypicked, BUILTIN.DF(t.billingstatus) AS billingstatus
             FROM transaction t
             WHERE t.type = 'SalesOrd' AND {filter}
             ORDER BY t.trandate DESC
