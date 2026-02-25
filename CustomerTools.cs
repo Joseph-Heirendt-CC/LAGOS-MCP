@@ -31,7 +31,7 @@ public class CustomerTools(INetSuiteBusinessAppClient client, ILogger<CustomerTo
     public async Task<string> ListCustomers(
         [McpToolTrigger("list_customers",
             "Search and list NetSuite customers using a SuiteQL WHERE clause filter. " +
-            "Returns id, entityid, companyname, email, phone, balance, terms, and isinactive. " +
+            "Returns id, entityid, companyname, email, phone, terms, and isinactive. " +
             "Examples: filter='isinactive = ''F''' or filter='companyname LIKE ''Acme%'''.")] ToolInvocationContext toolCall,
         FunctionContext context,
         CancellationToken ct)
