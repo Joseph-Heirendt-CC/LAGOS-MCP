@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
@@ -54,12 +56,53 @@ public class SuiteQLTools(INetSuiteBusinessAppClient client, ILogger<SuiteQLTool
         FunctionContext context,
         CancellationToken ct)
     {
-        var query = toolCall.Arguments.GetRequiredString("query");
+        // Log the raw argument payload before any processing so we can see
+        // exactly what the MCP framework received from the calling client.
+        var rawArgs = "(null)";
+        try
+        {
+            rawArgs = toolCall.Arguments is not null
+                ? JsonSerializer.Serialize(toolCall.Arguments)
+                : "(null)";
+        }
+        catch (Exception serEx)
+        {
+            logger.LogWarning(serEx, "execute_suiteql: could not serialize raw arguments");
+        }
 
-        logger.LogInformation("execute_suiteql: {Query}", query);
+        logger.LogInformation("execute_suiteql raw arguments: {RawArgs}", rawArgs);
+        logger.LogInformation("execute_suiteql argument keys: [{Keys}]",
+            string.Join(", ", toolCall.Arguments?.Keys ?? []));
 
-        var result = await client.ExecuteSuiteQLAsync(query, ct);
-        return result.ToJsonString();
+        try
+        {
+            var query = toolCall.Arguments.GetRequiredString("query");
+
+            logger.LogInformation("execute_suiteql query extracted: {Query}", query);
+
+            var result = await client.ExecuteSuiteQLAsync(query, ct);
+            return result.ToJsonString();
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogError(ex, "execute_suiteql: argument extraction failed — {Message}", ex.Message);
+            return new JsonObject
+            {
+                ["error"] = "ArgumentError",
+                ["message"] = ex.Message,
+                ["receivedKeys"] = new JsonArray(
+                    (toolCall.Arguments?.Keys.Select(JsonValue.Create) ?? []).ToArray<JsonNode?>())
+            }.ToJsonString();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "execute_suiteql: unhandled exception — {Type}: {Message}", ex.GetType().Name, ex.Message);
+            return new JsonObject
+            {
+                ["error"] = ex.GetType().Name,
+                ["message"] = ex.Message
+            }.ToJsonString();
+        }
     }
 
     [Function(nameof(GetCustomerAging))]
