@@ -4,5 +4,6 @@
     "azureFunctions.projectRuntime": "~4",
     "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.preDeployTask": "publish (functions)",
-    "azureFunctions.mcpProjectType": "McpExtensionServer"
+    "azureFunctions.mcpProjectType": "McpExtensionServer",
+    "claudeCode.useTerminal": false
 }
