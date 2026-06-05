@@ -1,0 +1,5 @@
+{
+  "extensions":[
+    { "name": "Mcp", "typeName":"Microsoft.Azure.Functions.Extensions.Mcp.McpStartup, Microsoft.Azure.Functions.Extensions.Mcp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=551316b6919f366c"}
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "masterKey": {
+    "name": "master",
+    "value": "_vE-hPChvODOjJVh5rwRTvRfTOs5PxG19zD-RSnhi6AcAzFukyhSww==",
+    "encrypted": false
+  },
+  "functionKeys": [
+    {
+      "name": "default",
+      "value": "kw6FF0XePtwpnIbcGZJ2SDJ22lhUuRZp8kXIDuIWqdABAzFu8QjOAw==",
+      "encrypted": false
+    }
+  ],
+  "systemKeys": [],
+  "hostName": "localhost:7071",
+  "instanceId": "000000000000000000000000F07F3061",
+  "source": "runtime",
+  "decryptionKeyId": ""
+}{
+  "masterKey": {
+    "name": "master",
+    "value": "_vE-hPChvODOjJVh5rwRTvRfTOs5PxG19zD-RSnhi6AcAzFukyhSww==",
+    "encrypted": false
+  },
+  "functionKeys": [
+    {
+      "name": "default",
+      "value": "kw6FF0XePtwpnIbcGZJ2SDJ22lhUuRZp8kXIDuIWqdABAzFu8QjOAw==",
+      "encrypted": false
+    }
+  ],
+  "systemKeys": [
+    {
+      "name": "mcp_extension",
+      "value": "W9qPcNhXunhPVEAjtp1XspTf1Ro4Dew7s0sFNtraTnv1AzFu_h2Gpw==",
+      "encrypted": false
+    }
+  ],
+  "hostName": "localhost:7071",
+  "instanceId": "000000000000000000000000F07F3061",
+  "source": "runtime",
+  "decryptionKeyId": ""
+}

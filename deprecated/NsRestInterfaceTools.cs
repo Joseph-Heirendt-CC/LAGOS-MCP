@@ -34,6 +34,7 @@ public class NsRestInterfaceTools
 			SuiteQlArgs args;
 			try
 			{
+				_logger.LogInformation("Received executeSuiteQL request with args: {ArgsJson}", Truncate(argsJson, 1000));
 				args = JsonSerializer.Deserialize<SuiteQlArgs>(argsJson, JsonOptions.Default)
 					?? throw new InvalidOperationException("Tool arguments were empty or invalid.");
 			}
