@@ -1,0 +1,135 @@
+[
+  {
+    "name": "LookupDoor",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.LookupDoor",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "lookup_door",
+        "description": "Resolve a Door (retail account / company-type Customer) in NetSuite by one or more criteria. Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), city (partial city match), or state (exact two-letter state abbreviation). Filters to active Doors only (custentity_cca_door = T). Returns up to 50 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. Use the returned id as doorId in all other door and store visit tools.",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "GetDoorContacts",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.GetDoorContacts",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "get_door_contacts",
+        "description": "Returns all active Contacts linked to a Door (retail account). Surfaces each contact\u0027s name, email, phone, title, and role (e.g. Sales Associate, Store Manager, Department Manager). Requires doorId \u2014 the Customer internal ID returned by lookup_door.",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "GetOpenTasksForDoor",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.GetOpenTasksForDoor",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "get_open_tasks_for_door",
+        "description": "Returns open escalation Tasks associated with a Door. Filters to not-started and in-progress tasks only (excludes COMPLETE). Returns task id, title, status, priority, start date, due date, assigned employee, and message body. Requires doorId from lookup_door. Optional limit (default 25, max 100).",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "GetEventAndTrainingHistory",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.GetEventAndTrainingHistory",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "get_event_and_training_history",
+        "description": "Retrieves Event (Project/Job) records and Training Recap records associated with a Door to support pre-visit preparation. Returns two separate arrays: events and trainingRecaps. Optional filters: startDate and endDate (MM/DD/YYYY format). Optional limit (default 20 each, max 50). Requires doorId from lookup_door.",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "CreateStoreVisit",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "StoreVisitTools.CreateStoreVisit",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "create_store_visit",
+        "description": "Creates a new Store Visit record in NetSuite as a skeleton for the visit. Call this at the start of a store visit before capturing checklist data. Required parameters: doorId (Customer internal ID from lookup_door), brandAmbassadorId (employee internal ID of the visiting BA), visitDate (MM/DD/YYYY), visitType (the internal list ID for the visit type, e.g. \u00274\u0027). Returns the new record\u0027s id \u2014 pass this as recordId to update_store_visit.",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "UpdateStoreVisit",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "StoreVisitTools.UpdateStoreVisit",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "update_store_visit",
+        "description": "Updates an existing Store Visit record with checklist responses, issue flags, and summary fields. Pass recordId (from create_store_visit or get_recent_store_visits) and a fields JSON object containing only the fields to update. Boolean values must be \u0027T\u0027 (true) or \u0027F\u0027 (false). \n\nAUDIT BOOLEANS (\u0027T\u0027/\u0027F\u0027):\ncustrecord_cca_sv_backstock_inv_audited \u2014 Backstock inventory audit completed\ncustrecord_cca_sv_price_audited \u2014 Price audit completed\ncustrecord_cca_sv_pad_product_audit \u2014 Pad product audit completed\ncustrecord_cca_sv_pres_elem_audit \u2014 Presentation elements audit completed\ncustrecord_cca_sv_fixture_layout_audit \u2014 Fixture layout audit completed\ncustrecord_cca_sv_market_material_audit \u2014 Marketing material audit completed\ncustrecord_cca_sv_caseline_flow_reviewed \u2014 Caseline flow reviewed\ncustrecord_cca_sv_tarnishing_check \u2014 Tarnishing check completed\ncustrecord_cca_sv_vitrine_audited \u2014 Vitrine audited\ncustrecord_cca_sv_sales_floor_rep_verif \u2014 Sales floor rep verified\n\nISSUE FLAGS (\u0027T\u0027/\u0027F\u0027):\ncustrecord_cca_sv_backstock_inv_issue \u2014 Backstock inventory issue identified\ncustrecord_cca_sv_price_issue_id \u2014 Price issue identified\ncustrecord_cca_sv_pad_prod_issue \u2014 Pad product issue identified\ncustrecord_cca_sv_pres_elem_issue \u2014 Presentation elements issue identified\ncustrecord_cca_sv_fixture_layout_issue \u2014 Fixture layout issue identified\ncustrecord_cca_sv_mark_material_issue \u2014 Marketing material issue identified\ncustrecord_cca_sv_caseline_flow_issue \u2014 Caseline flow issue identified\ncustrecord_cca_sv_tarnish_issue \u2014 Tarnishing issue identified\ncustrecord_cca_sv_vitrine_issue_identi \u2014 Vitrine issue identified\ncustrecord_cca_sv_dsa_issue_idenified \u2014 DSA issue identified\ncustrecord_cca_sv_mark_opp_identified \u2014 Marketing opportunity identified\ncustrecord_cca_sv_qual_iss_id \u2014 Quality issue identified\ncustrecord_cca_sv_prod_tags_issue \u2014 Product tags issue identified\ncustrecord_cca_sv_prod_tag_tucked \u2014 Product tag tucked issue\ncustrecord_cca_sv_training_needs_id \u2014 Training needs identified\ncustrecord_cca_sv_space_location_moved \u2014 Space/location moved issue\ncustrecord_cca_sv_incentive_running \u2014 Incentive currently running\ncustrecord_cca_sv_store_aware_incentive \u2014 Store aware of incentive\ncustrecord_cca_sv_competitor_incentives \u2014 Competitor incentives present\n\nTEXT / NUMERIC FIELDS:\ncustrecord_cca_sv_immediate_actions (string) \u2014 Immediate actions taken during visit\ncustrecord_cca_sv_next_visit_focus (string) \u2014 Focus areas for next visit\ncustrecord_cca_sv_caseline_space (number) \u2014 Caseline space count\ncustrecord_cca_sv_gold_pads (number) \u2014 Gold pad count\ncustrecord_cca_sv_numb_pads_mens (number) \u2014 Number of men\u0027s pads\ncustrecord_cca_sv_numb_pads_women (number) \u2014 Number of women\u0027s pads\ncustrecord_cca_sv_total_gold_pads (number) \u2014 Total gold pads\ncustrecord_cca_sv_total_pads (number) \u2014 Total pads\n\nExample: { \u0022custrecord_cca_sv_backstock_inv_audited\u0022: \u0022T\u0022, \u0022custrecord_cca_sv_backstock_inv_issue\u0022: \u0022F\u0022, \u0022custrecord_cca_sv_immediate_actions\u0022: \u0022Replenish pad tray\u0022 }",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "GetRecentStoreVisits",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "StoreVisitTools.GetRecentStoreVisits",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "get_recent_store_visits",
+        "description": "Retrieves the most recent Store Visit records for a Door, used to generate the Pre-Visit Summary. Returns visit date, type, brand ambassador, immediate actions, next visit focus, total pads, and total gold pads per visit. Use the returned id as recordId when calling update_store_visit on an existing record. Requires doorId from lookup_door. Optional limit (default 5, max 50).",
+        "properties": {}
+      }
+    ]
+  }
+]

@@ -57,6 +57,18 @@ public static class McpToolArgumentExtensions
         return JsonNode.Parse(json) as JsonArray;
     }
 
+    public static bool? GetOptionalBool(this Dictionary<string, object>? args, string key)
+    {
+        if (args == null || !args.TryGetValue(key, out var value) || value == null)
+            return null;
+        if (value is bool b)
+            return b;
+        var s = value.ToString();
+        if (string.Equals(s, "true", StringComparison.OrdinalIgnoreCase) || s == "T") return true;
+        if (string.Equals(s, "false", StringComparison.OrdinalIgnoreCase) || s == "F") return false;
+        return null;
+    }
+
     // ── ToolInvocationContext overloads ───────────────────────────────────────
 
     public static string GetRequiredString(this ToolInvocationContext toolCall, string key)
@@ -73,4 +85,7 @@ public static class McpToolArgumentExtensions
 
     public static JsonArray? GetOptionalArray(this ToolInvocationContext toolCall, string key)
         => toolCall.Arguments.GetOptionalArray(key);
+
+    public static bool? GetOptionalBool(this ToolInvocationContext toolCall, string key)
+        => toolCall.Arguments.GetOptionalBool(key);
 }
