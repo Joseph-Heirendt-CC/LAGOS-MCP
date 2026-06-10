@@ -11,8 +11,8 @@
   },
   "extensions": {
     "mcp": {
-      "instructions": "Some test instructions on how to use the server",
-      "serverName": "TestServer",
+      "instructions": "Store visit workflow assistant for Lagos brand ambassadors. Use lookup_door to find a Door (retail account) by BA assignment, name, or location. Use get_door_contacts to surface store managers and sales associates. Use get_open_tasks_for_door for outstanding escalations. Use get_event_and_training_history for past events and training recaps. Use create_store_visit to open a new visit record, update_store_visit to record checklist responses, and get_recent_store_visits to review prior visit history.",
+      "serverName": "StoreVisitWorkflow",
       "serverVersion": "2.0.0",
       "encryptClientState": true,
       "messageOptions": {

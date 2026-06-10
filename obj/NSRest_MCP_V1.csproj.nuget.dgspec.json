@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj": {}
+    "C:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj": {}
   },
   "projects": {
-    "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj": {
+    "C:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj",
+        "projectUniqueName": "C:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj",
         "projectName": "NSRest_MCP_V1",
-        "projectPath": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj",
+        "projectPath": "C:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj",
         "packagesPath": "C:\\Users\\JosephHeirendt\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\obj\\",
+        "outputPath": "C:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

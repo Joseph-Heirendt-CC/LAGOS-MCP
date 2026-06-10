@@ -9112,11 +9112,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\obj\\Release\\net8.0\\WorkerExtensions\\WorkerExtensions.csproj",
+      "projectUniqueName": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\obj\\Release\\net8.0\\WorkerExtensions\\WorkerExtensions.csproj",
       "projectName": "Microsoft.Azure.Functions.Worker.Extensions",
-      "projectPath": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\obj\\Release\\net8.0\\WorkerExtensions\\WorkerExtensions.csproj",
+      "projectPath": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\obj\\Release\\net8.0\\WorkerExtensions\\WorkerExtensions.csproj",
       "packagesPath": "C:\\Users\\JosephHeirendt\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\obj\\Release\\net8.0\\WorkerExtensions\\obj\\",
+      "outputPath": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\obj\\Release\\net8.0\\WorkerExtensions\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

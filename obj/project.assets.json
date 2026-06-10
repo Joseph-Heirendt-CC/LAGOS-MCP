@@ -4852,11 +4852,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj",
+      "projectUniqueName": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj",
       "projectName": "NSRest_MCP_V1",
-      "projectPath": "c:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\NSRest_MCP_V1.csproj",
+      "projectPath": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\NSRest_MCP_V1.csproj",
       "packagesPath": "C:\\Users\\JosephHeirendt\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\JosephHeirendt\\source\\repos\\NSRest_MCP_V1\\obj\\",
+      "outputPath": "c:\\Users\\JosephHeirendt\\source\\LAGOS-MCP\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
