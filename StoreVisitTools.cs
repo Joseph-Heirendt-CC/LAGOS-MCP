@@ -10,7 +10,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
     [Function(nameof(CreateStoreVisit))]
     public async Task<string> CreateStoreVisit(
         [McpToolTrigger("create_store_visit",
-            "Creates a new Store Visit record in NetSuite as a skeleton for the visit. " +
+            "Creates a new Store Visit record in NetSuite as a skeleton for the visit.  " +
             "Call this at the start of a store visit before capturing checklist data. " +
             "Required parameters: " +
             "doorId (Customer internal ID from lookup_door), " +
