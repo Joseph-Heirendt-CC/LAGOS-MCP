@@ -19,13 +19,13 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "visitType (the internal list ID for the visit type, e.g. '4'). " +
             "Returns the new record's id — pass this as recordId to update_store_visit.")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("doorId",            "Customer internal ID from lookup_door", true)] string doorId,
+        [McpToolProperty("brandAmbassadorId", "Employee internal ID of the visiting BA", true)] string brandAmbassadorId,
+        [McpToolProperty("visitDate",         "Visit date in MM/DD/YYYY format", true)] string visitDate,
+        [McpToolProperty("visitType",         "Internal list ID for the visit type", true)] string visitType,
         FunctionContext context,
         CancellationToken ct)
     {
-        var doorId            = toolCall.GetRequiredString("doorId");
-        var brandAmbassadorId = toolCall.GetRequiredString("brandAmbassadorId");
-        var visitDate         = toolCall.GetRequiredString("visitDate");
-        var visitType         = toolCall.GetRequiredString("visitType");
 
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
@@ -97,11 +97,12 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "\ncustrecord_cca_sv_total_pads (number) — Total pads" +
             "\n\nExample: { \"custrecord_cca_sv_backstock_inv_audited\": \"T\", \"custrecord_cca_sv_backstock_inv_issue\": \"F\", \"custrecord_cca_sv_immediate_actions\": \"Replenish pad tray\" }")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("recordId", "Internal ID of the store visit record", true)] string recordId,
+        [McpToolProperty("fields",   "Key-value pairs of fields to update", true)] string? fieldsJson,
         FunctionContext context,
         CancellationToken ct)
     {
-        var recordId = toolCall.GetRequiredString("recordId");
-        var fields   = toolCall.GetRequiredObject("fields");
+        var fields = toolCall.GetRequiredObject("fields");
 
         logger.LogInformation("update_store_visit: recordId={RecordId}", recordId);
         var result = await client.UpdateRecordAsync("customrecord_cca_store_visit", recordId, fields, ct);
@@ -118,17 +119,18 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "Use the returned id as recordId when calling update_store_visit on an existing record. " +
             "Requires doorId from lookup_door. Optional limit (default 5, max 50).")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("doorId", "Customer internal ID from lookup_door", true)] string doorId,
+        [McpToolProperty("limit",  "Max records to return (default 5, max 50)")] int? limit,
         FunctionContext context,
         CancellationToken ct)
     {
-        var doorId = toolCall.GetRequiredString("doorId");
-        var limit  = Math.Min(toolCall.GetOptionalInt("limit") ?? 5, 50);
+        var effectiveLimit = Math.Min(limit ?? 5, 50);
 
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
 
         var query = $"""
-            SELECT TOP {limit}
+            SELECT TOP {effectiveLimit}
                 sv.id,
                 sv.name,
                 sv.custrecord_cca_sv_visit_date,
@@ -143,7 +145,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             ORDER BY sv.custrecord_cca_sv_visit_date DESC
             """;
 
-        logger.LogInformation("get_recent_store_visits: doorId={DoorId} limit={Limit}", doorId, limit);
+        logger.LogInformation("get_recent_store_visits: doorId={DoorId} limit={Limit}", doorId, effectiveLimit);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
         return result.ToJsonString();
     }

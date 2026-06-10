@@ -19,13 +19,13 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "Returns up to 50 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. " +
             "Use the returned id as doorId in all other door and store visit tools.")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("name",  "Partial company name match")] string? name,
+        [McpToolProperty("baId",  "Brand Ambassador employee internal ID (numeric NetSuite ID)")] string? baId,
+        [McpToolProperty("city",  "Partial city match")] string? city,
+        [McpToolProperty("state", "Exact two-letter state abbreviation")] string? state,
         FunctionContext context,
         CancellationToken ct)
     {
-        var baId  = toolCall.GetOptionalString("baId");
-        var name  = toolCall.GetOptionalString("name");
-        var city  = toolCall.GetOptionalString("city");
-        var state = toolCall.GetOptionalString("state");
 
         if (baId == null && name == null && city == null && state == null)
             throw new ArgumentException("At least one of baId, name, city, or state is required.");
@@ -80,11 +80,10 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "Surfaces each contact's name, email, phone, title, and role (e.g. Sales Associate, Store Manager, Department Manager). " +
             "Requires doorId — the Customer internal ID returned by lookup_door.")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("doorId", "Customer internal ID from lookup_door", true)] string doorId,
         FunctionContext context,
         CancellationToken ct)
     {
-        var doorId = toolCall.GetRequiredString("doorId");
-
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
 
@@ -119,17 +118,18 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "Returns task id, title, status, priority, start date, due date, assigned employee, and message body. " +
             "Requires doorId from lookup_door. Optional limit (default 25, max 100).")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("doorId", "Customer internal ID from lookup_door", true)] string doorId,
+        [McpToolProperty("limit",  "Max records to return (default 25, max 100)")] int? limit,
         FunctionContext context,
         CancellationToken ct)
     {
-        var doorId = toolCall.GetRequiredString("doorId");
-        var limit  = Math.Min(toolCall.GetOptionalInt("limit") ?? 25, 100);
+        var effectiveLimit = Math.Min(limit ?? 25, 100);
 
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
 
         var query = $"""
-            SELECT TOP {limit}
+            SELECT TOP {effectiveLimit}
                 t.id,
                 t.title,
                 t.status,
@@ -144,7 +144,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             ORDER BY t.duedate ASC
             """;
 
-        logger.LogInformation("get_open_tasks_for_door: doorId={DoorId} limit={Limit}", doorId, limit);
+        logger.LogInformation("get_open_tasks_for_door: doorId={DoorId} limit={Limit}", doorId, effectiveLimit);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
         return result.ToJsonString();
     }
@@ -159,13 +159,14 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "Optional filters: startDate and endDate (MM/DD/YYYY format). Optional limit (default 20 each, max 50). " +
             "Requires doorId from lookup_door.")]
         ToolInvocationContext toolCall,
+        [McpToolProperty("doorId",    "Customer internal ID from lookup_door", true)] string doorId,
+        [McpToolProperty("startDate", "Start date filter in MM/DD/YYYY format")] string? startDate,
+        [McpToolProperty("endDate",   "End date filter in MM/DD/YYYY format")] string? endDate,
+        [McpToolProperty("limit",     "Max records per type (default 20, max 50)")] int? limit,
         FunctionContext context,
         CancellationToken ct)
     {
-        var doorId    = toolCall.GetRequiredString("doorId");
-        var startDate = toolCall.GetOptionalString("startDate");
-        var endDate   = toolCall.GetOptionalString("endDate");
-        var limit     = Math.Min(toolCall.GetOptionalInt("limit") ?? 20, 50);
+        var effectiveLimit = Math.Min(limit ?? 20, 50);
 
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
@@ -176,7 +177,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         var dateWhere = dateClauses.Count > 0 ? " AND " + string.Join(" AND ", dateClauses) : string.Empty;
 
         var eventQuery = $"""
-            SELECT TOP {limit}
+            SELECT TOP {effectiveLimit}
                 j.id,
                 j.jobname AS title,
                 j.startdate,
@@ -195,7 +196,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         var trainingDateWhere = trainingDateClauses.Count > 0 ? " AND " + string.Join(" AND ", trainingDateClauses) : string.Empty;
 
         var trainingQuery = $"""
-            SELECT TOP {limit}
+            SELECT TOP {effectiveLimit}
                 tr.id,
                 tr.name AS title,
                 tr.custrecord_cca_tr_date       AS trainingDate,

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NSRest_MCP_V1")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5c09cda35dfcddb356e655251434aef125e9254a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+51e642577648e28e7c17c027ec53e1ef544396fa")]
 [assembly: System.Reflection.AssemblyProductAttribute("NSRest_MCP_V1")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NSRest_MCP_V1")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
