@@ -90,7 +90,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         if (name == null && email == null)
             throw new ArgumentException("At least one of name or email is required.");
 
-        var clauses = new List<string> { "e.isinactive = 'F'" };
+        var clauses = new List<string> { "e.isinactive = 'F'", "e.custentity_cca_is_brand_ambassador = 'T'" };
 
         if (name  != null) clauses.Add($"(LOWER(e.firstname) LIKE LOWER('%{EscapeSuiteQL(name)}%') OR LOWER(e.lastname) LIKE LOWER('%{EscapeSuiteQL(name)}%'))");
         if (email != null) clauses.Add($"LOWER(e.email) LIKE LOWER('%{EscapeSuiteQL(email)}%')");

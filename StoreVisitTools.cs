@@ -5,6 +5,22 @@ using Microsoft.Extensions.Logging;
 
 public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVisitTools> logger)
 {
+    // Accepts any human-readable date and normalizes to yyyy-MM-dd for NetSuite.
+    // Strips ordinal suffixes (1st, 2nd, 3rd, 4th) before parsing so inputs like
+    // "June 2nd 2026" work alongside "6/2/26", "6/2", and ISO dates.
+    private static string NormalizeDate(string input)
+    {
+        var stripped = System.Text.RegularExpressions.Regex.Replace(
+            input.Trim(), @"(\d+)(st|nd|rd|th)\b", "$1",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (DateTime.TryParse(stripped, out var dt))
+            return dt.ToString("yyyy-MM-dd");
+
+        throw new ArgumentException(
+            $"Could not parse '{input}' as a date. Try formats like '2026-06-02', '6/2/2026', or 'June 2 2026'.");
+    }
+
     // ── create_store_visit ─────────────────────────────────────────────────────
 
     [Function(nameof(CreateStoreVisit))]
@@ -15,18 +31,21 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "Required parameters: " +
             "doorId (Customer internal ID from lookup_door), " +
             "brandAmbassadorId (employee internal ID of the visiting BA), " +
-            "visitDate (MM/DD/YYYY), " +
-            "visitType (the internal list ID for the visit type, e.g. '4'). " +
+            "visitDate (any recognizable date format, e.g. 'June 2nd 2026', '6/2/26', '2026-06-02'), " +
+            "visitType (the internal list ID for the visit type, e.g. '4'), " +
+            "name (display name for the store visit record). " +
             "Returns the new record's id — pass this as recordId to update_store_visit.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("doorId",            "Customer internal ID from lookup_door", true)] string doorId,
         [McpToolProperty("brandAmbassadorId", "Employee internal ID of the visiting BA", true)] string brandAmbassadorId,
-        [McpToolProperty("visitDate",         "Visit date in MM/DD/YYYY format", true)] string visitDate,
+        [McpToolProperty("visitDate",         "Visit date in any recognizable format (e.g. 'June 2nd 2026', '6/2/26', '2026-06-02')", true)] string visitDate,
         [McpToolProperty("visitType",         "Internal list ID for the visit type", true)] string visitType,
+        [McpToolProperty("name",              "Display name for the store visit record", true)] string name,
         FunctionContext context,
         CancellationToken ct)
     {
-
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("name is required and cannot be empty.");
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
         if (!long.TryParse(brandAmbassadorId, out _))
@@ -34,14 +53,15 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
 
         var body = new JsonObject
         {
+            ["name"]                              = name,
             ["custrecord_cca_sv_door"]            = new JsonObject { ["id"] = doorId },
             ["custrecord_cca_sv_brand_ambassador"] = new JsonObject { ["id"] = brandAmbassadorId },
-            ["custrecord_cca_sv_visit_date"]       = visitDate,
+            ["custrecord_cca_sv_visit_date"]       = NormalizeDate(visitDate),
             ["custrecord_cca_sv_visit_type"]       = visitType
         };
 
-        logger.LogInformation("create_store_visit: doorId={DoorId} baId={BaId} visitDate={VisitDate} visitType={VisitType}",
-            doorId, brandAmbassadorId, visitDate, visitType);
+        logger.LogInformation("create_store_visit: name={Name} doorId={DoorId} baId={BaId} visitDate={VisitDate} visitType={VisitType}",
+            name, doorId, brandAmbassadorId, visitDate, visitType);
 
         var result = await client.CreateRecordAsync("customrecord_cca_store_visit", body, ct);
         return result.ToJsonString();
