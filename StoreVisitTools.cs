@@ -32,20 +32,18 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "doorId (Customer internal ID from lookup_door), " +
             "brandAmbassadorId (employee internal ID of the visiting BA), " +
             "visitDate (any recognizable date format, e.g. 'June 2nd 2026', '6/2/26', '2026-06-02'), " +
-            "visitType (the internal list ID for the visit type, e.g. '4'), " +
-            "name (display name for the store visit record). " +
+            "name (title of this visit record — NOT the store or company name; the store is identified by doorId; e.g. 'Smith - Nordstrom Visit 6/11/2026'). " +
             "Returns the new record's id — pass this as recordId to update_store_visit.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("doorId",            "Customer internal ID from lookup_door", true)] string doorId,
         [McpToolProperty("brandAmbassadorId", "Employee internal ID of the visiting BA", true)] string brandAmbassadorId,
         [McpToolProperty("visitDate",         "Visit date in any recognizable format (e.g. 'June 2nd 2026', '6/2/26', '2026-06-02')", true)] string visitDate,
-        [McpToolProperty("visitType",         "Internal list ID for the visit type", true)] string visitType,
-        [McpToolProperty("name",              "Display name for the store visit record", true)] string name,
+        [McpToolProperty("name",              "Title of this visit record — NOT the store or company name (e.g. 'Smith - Nordstrom Visit 6/11/2026'). The store is identified by doorId.", true)] string name,
         FunctionContext context,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("name is required and cannot be empty.");
+            throw new ArgumentException("name is required and cannot be empty. Provide a visit record title such as 'Smith - Nordstrom Visit 6/11/2026', not the store or company name.");
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
         if (!long.TryParse(brandAmbassadorId, out _))
@@ -56,12 +54,11 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             ["name"]                              = name,
             ["custrecord_cca_sv_door"]            = new JsonObject { ["id"] = doorId },
             ["custrecord_cca_sv_brand_ambassador"] = new JsonObject { ["id"] = brandAmbassadorId },
-            ["custrecord_cca_sv_visit_date"]       = NormalizeDate(visitDate),
-            ["custrecord_cca_sv_visit_type"]       = visitType
+            ["custrecord_cca_sv_visit_date"]       = NormalizeDate(visitDate)
         };
 
-        logger.LogInformation("create_store_visit: name={Name} doorId={DoorId} baId={BaId} visitDate={VisitDate} visitType={VisitType}",
-            name, doorId, brandAmbassadorId, visitDate, visitType);
+        logger.LogInformation("create_store_visit: name={Name} doorId={DoorId} baId={BaId} visitDate={VisitDate}",
+            name, doorId, brandAmbassadorId, visitDate);
 
         var result = await client.CreateRecordAsync("customrecord_cca_store_visit", body, ct);
         return result.ToJsonString();

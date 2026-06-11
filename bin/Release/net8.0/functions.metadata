@@ -236,7 +236,7 @@
         "direction": "In",
         "type": "mcpToolTrigger",
         "toolName": "create_store_visit",
-        "description": "Creates a new Store Visit record in NetSuite as a skeleton for the visit.  Call this at the start of a store visit before capturing checklist data. Required parameters: doorId (Customer internal ID from lookup_door), brandAmbassadorId (employee internal ID of the visiting BA), visitDate (any recognizable date format, e.g. \u0027June 2nd 2026\u0027, \u00276/2/26\u0027, \u00272026-06-02\u0027), visitType (the internal list ID for the visit type, e.g. \u00274\u0027), name (display name for the store visit record). Returns the new record\u0027s id \u2014 pass this as recordId to update_store_visit.",
+        "description": "Creates a new Store Visit record in NetSuite as a skeleton for the visit.  Call this at the start of a store visit before capturing checklist data. Required parameters: doorId (Customer internal ID from lookup_door), brandAmbassadorId (employee internal ID of the visiting BA), visitDate (any recognizable date format, e.g. \u0027June 2nd 2026\u0027, \u00276/2/26\u0027, \u00272026-06-02\u0027), name (title of this visit record \u2014 NOT the store or company name; the store is identified by doorId; e.g. \u0027Smith - Nordstrom Visit 6/11/2026\u0027). Returns the new record\u0027s id \u2014 pass this as recordId to update_store_visit.",
         "properties": {}
       },
       {
@@ -270,22 +270,12 @@
         "properties": {}
       },
       {
-        "name": "visitType",
-        "direction": "In",
-        "type": "mcpToolProperty",
-        "dataType": "String",
-        "propertyName": "visitType",
-        "description": "Internal list ID for the visit type",
-        "isRequired": true,
-        "properties": {}
-      },
-      {
         "name": "name",
         "direction": "In",
         "type": "mcpToolProperty",
         "dataType": "String",
         "propertyName": "name",
-        "description": "Display name for the store visit record",
+        "description": "Title of this visit record \u2014 NOT the store or company name (e.g. \u0027Smith - Nordstrom Visit 6/11/2026\u0027). The store is identified by doorId.",
         "isRequired": true,
         "properties": {}
       }
