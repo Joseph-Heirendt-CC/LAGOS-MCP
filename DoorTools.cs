@@ -39,7 +39,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "c.isinactive = 'F'"
         };
 
-        if (baId  != null) clauses.Add($"c.custentity_cca_ba_assignment = {baId}");
+        if (baId  != null) clauses.Add($"c.custentity_cca_brand_ambassador = {baId}");
         if (name  != null) clauses.Add($"LOWER(c.companyname) LIKE LOWER('%{EscapeSuiteQL(name)}%')");
         if (city  != null) clauses.Add($"LOWER(aba.city) LIKE LOWER('%{EscapeSuiteQL(city)}%')");
         if (state != null) clauses.Add($"LOWER(aba.state) = LOWER('{EscapeSuiteQL(state)}')");
@@ -56,8 +56,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 c.id,
                 c.entityid,
                 c.companyname,
-                BUILTIN.DF(c.custentity_cca_ba_assignment) AS brandAmbassador,
-                BUILTIN.DF(c.custentity_cca_wbm)           AS wbm,
+                BUILTIN.DF(c.custentity_cca_brand_ambassador) AS brandAmbassador,
+                BUILTIN.DF(c.salesrep)           AS wholesaleBrandManager,
                 BUILTIN.DF(c.custentity_cca_planner)       AS planner,
                 BUILTIN.DF(c.subsidiary)                   AS subsidiary
             FROM customer c
@@ -67,6 +67,49 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             """;
 
         logger.LogInformation("lookup_door: baId={BaId} name={Name} city={City} state={State}", baId, name, city, state);
+        var result = await client.ExecuteSuiteQLAsync(query, ct);
+        return result.ToJsonString();
+    }
+
+    // ── lookup_brand_ambassador ───────────────────────────────────────────────
+
+    [Function(nameof(LookupBrandAmbassador))]
+    public async Task<string> LookupBrandAmbassador(
+        [McpToolTrigger("lookup_brand_ambassador",
+            "Resolve a Brand Ambassador (NetSuite employee) by name or email to obtain their internal ID. " +
+            "Supply at least one of: name (partial first or last name match) or email (partial email match). " +
+            "Filters to active employees only. " +
+            "Returns up to 25 matches with: id, entityId, firstName, lastName, email. " +
+            "Use the returned id as brandAmbassadorId in create_store_visit.")]
+        ToolInvocationContext toolCall,
+        [McpToolProperty("name",  "Partial first or last name match")] string? name,
+        [McpToolProperty("email", "Partial email address match")] string? email,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        if (name == null && email == null)
+            throw new ArgumentException("At least one of name or email is required.");
+
+        var clauses = new List<string> { "e.isinactive = 'F'" };
+
+        if (name  != null) clauses.Add($"(LOWER(e.firstname) LIKE LOWER('%{EscapeSuiteQL(name)}%') OR LOWER(e.lastname) LIKE LOWER('%{EscapeSuiteQL(name)}%'))");
+        if (email != null) clauses.Add($"LOWER(e.email) LIKE LOWER('%{EscapeSuiteQL(email)}%')");
+
+        var where = string.Join("\n  AND ", clauses);
+
+        var query = $"""
+            SELECT TOP 25
+                e.id,
+                e.entityid,
+                e.firstname,
+                e.lastname,
+                e.email
+            FROM employee e
+            WHERE {where}
+            ORDER BY e.lastname, e.firstname
+            """;
+
+        logger.LogInformation("lookup_brand_ambassador: name={Name} email={Email}", name, email);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
         return result.ToJsonString();
     }

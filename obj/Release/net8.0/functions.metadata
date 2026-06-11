@@ -59,6 +59,45 @@
     ]
   },
   {
+    "name": "LookupBrandAmbassador",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.LookupBrandAmbassador",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "lookup_brand_ambassador",
+        "description": "Resolve a Brand Ambassador (NetSuite employee) by name or email to obtain their internal ID. Supply at least one of: name (partial first or last name match) or email (partial email match). Filters to active employees only. Returns up to 25 matches with: id, entityId, firstName, lastName, email. Use the returned id as brandAmbassadorId in create_store_visit.",
+        "properties": {}
+      },
+      {
+        "name": "name",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "name",
+        "description": "Partial first or last name match",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "email",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "email",
+        "description": "Partial email address match",
+        "isRequired": false,
+        "properties": {}
+      }
+    ]
+  },
+  {
     "name": "GetDoorContacts",
     "scriptFile": "NSRest_MCP_V1.dll",
     "entryPoint": "DoorTools.GetDoorContacts",
