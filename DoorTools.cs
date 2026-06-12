@@ -16,7 +16,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             "Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), " +
             "city (partial city match), or state (exact two-letter state abbreviation). " +
             "Filters to active Doors only (custentity_cca_door = T). " +
-            "Returns up to 50 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. " +
+            "Returns up to 100 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. " +
             "Use the returned id as doorId in all other door and store visit tools.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("name",  "Partial company name match")] string? name,
@@ -52,7 +52,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             : string.Empty;
 
         var query = $"""
-            SELECT TOP 50
+            SELECT TOP 100
                 c.id,
                 c.entityid,
                 c.companyname,
@@ -69,6 +69,75 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         logger.LogInformation("lookup_door: baId={BaId} name={Name} city={City} state={State}", baId, name, city, state);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
         return result.ToJsonString();
+    }
+
+    // ── lookup_door_for_ui_selection ──────────────────────────────────────────
+
+    [Function(nameof(LookupDoorForUiSelection))]
+    public async Task<string> LookupDoorForUiSelection(
+        [McpToolTrigger("lookup_door_for_ui_selection",
+            "Search for active Doors (retail accounts) and return results formatted for a UI choice picker. " +
+            "Supply at least one of: baId, name, city, or state. " +
+            "Returns { \"choices\": [{\"title\": \"<company name>\", \"value\": \"<id>\"}] } — " +
+            "suitable for Copilot Studio adaptive card choice sets. " +
+            "Use the value (id) as doorId in create_store_visit and other door tools.")]
+        ToolInvocationContext toolCall,
+        [McpToolProperty("name",  "Partial company name match")] string? name,
+        [McpToolProperty("baId",  "Brand Ambassador employee internal ID (numeric NetSuite ID)")] string? baId,
+        [McpToolProperty("city",  "Partial city match")] string? city,
+        [McpToolProperty("state", "Exact two-letter state abbreviation")] string? state,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        if (baId == null && name == null && city == null && state == null)
+            throw new ArgumentException("At least one of baId, name, city, or state is required.");
+
+        if (baId != null && !long.TryParse(baId, out _))
+            throw new ArgumentException($"baId must be a numeric NetSuite internal ID, got: '{baId}'");
+
+        var clauses = new List<string>
+        {
+            "c.custentity_cca_door = 'T'",
+            "c.isinactive = 'F'"
+        };
+
+        if (baId  != null) clauses.Add($"c.custentity_cca_brand_ambassador = {baId}");
+        if (name  != null) clauses.Add($"LOWER(c.companyname) LIKE LOWER('%{EscapeSuiteQL(name)}%')");
+        if (city  != null) clauses.Add($"LOWER(aba.city) LIKE LOWER('%{EscapeSuiteQL(city)}%')");
+        if (state != null) clauses.Add($"LOWER(aba.state) = LOWER('{EscapeSuiteQL(state)}')");
+
+        var where = string.Join("\n  AND ", clauses);
+
+        var addressJoin = (city != null || state != null)
+            ? "LEFT JOIN addressbookaddress aba ON aba.entity = c.id AND aba.defaultbilling = 'T'"
+            : string.Empty;
+
+        var query = $"""
+            SELECT TOP 100
+                c.id,
+                c.companyname
+            FROM customer c
+            {addressJoin}
+            WHERE {where}
+            ORDER BY c.companyname
+            """;
+
+        logger.LogInformation("lookup_door_for_ui_selection: baId={BaId} name={Name} city={City} state={State}", baId, name, city, state);
+
+        var result  = await client.ExecuteSuiteQLAsync(query, ct);
+        var items   = result["items"] as JsonArray ?? new JsonArray();
+        var choices = new JsonArray();
+
+        foreach (var item in items)
+        {
+            choices.Add(new JsonObject
+            {
+                ["title"] = item?["companyname"]?.GetValue<string>(),
+                ["value"] = item?["id"]?.ToString()
+            });
+        }
+
+        return new JsonObject { ["choices"] = choices }.ToJsonString();
     }
 
     // ── lookup_brand_ambassador ───────────────────────────────────────────────

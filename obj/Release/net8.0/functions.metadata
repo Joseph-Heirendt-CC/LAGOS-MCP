@@ -13,7 +13,66 @@
         "direction": "In",
         "type": "mcpToolTrigger",
         "toolName": "lookup_door",
-        "description": "Resolve a Door (retail account / company-type Customer) in NetSuite by one or more criteria. Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), city (partial city match), or state (exact two-letter state abbreviation). Filters to active Doors only (custentity_cca_door = T). Returns up to 50 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. Use the returned id as doorId in all other door and store visit tools.",
+        "description": "Resolve a Door (retail account / company-type Customer) in NetSuite by one or more criteria. Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), city (partial city match), or state (exact two-letter state abbreviation). Filters to active Doors only (custentity_cca_door = T). Returns up to 100 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. Use the returned id as doorId in all other door and store visit tools.",
+        "properties": {}
+      },
+      {
+        "name": "name",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "name",
+        "description": "Partial company name match",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "baId",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "baId",
+        "description": "Brand Ambassador employee internal ID (numeric NetSuite ID)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "city",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "city",
+        "description": "Partial city match",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "state",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "state",
+        "description": "Exact two-letter state abbreviation",
+        "isRequired": false,
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "LookupDoorForUiSelection",
+    "scriptFile": "NSRest_MCP_V1.dll",
+    "entryPoint": "DoorTools.LookupDoorForUiSelection",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "toolCall",
+        "direction": "In",
+        "type": "mcpToolTrigger",
+        "toolName": "lookup_door_for_ui_selection",
+        "description": "Search for active Doors (retail accounts) and return results formatted for a UI choice picker. Supply at least one of: baId, name, city, or state. Returns { \u0022choices\u0022: [{\u0022title\u0022: \u0022\u003Ccompany name\u003E\u0022, \u0022value\u0022: \u0022\u003Cid\u003E\u0022}] } \u2014 suitable for Copilot Studio adaptive card choice sets. Use the value (id) as doorId in create_store_visit and other door tools.",
         "properties": {}
       },
       {
