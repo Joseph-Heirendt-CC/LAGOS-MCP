@@ -183,6 +183,51 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         return result.ToJsonString();
     }
 
+    // ── lookup_project ────────────────────────────────────────────────────────
+
+    [Function(nameof(LookupProject))]
+    public async Task<string> LookupProject(
+        [McpToolTrigger("lookup_project",
+            "Find NetSuite Project (Job) records linked to a Brand Ambassador or a Door. " +
+            "Supply at least one of: baId (Brand Ambassador employee internal ID) or doorId (Customer internal ID from lookup_door). " +
+            "Returns up to 50 matches with: id, entityId, status, projectName, customerName.")]
+        ToolInvocationContext toolCall,
+        [McpToolProperty("baId",   "Brand Ambassador employee internal ID (numeric NetSuite ID)")] string? baId,
+        [McpToolProperty("doorId", "Customer (Door) internal ID from lookup_door (numeric NetSuite ID)")] string? doorId,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        if (baId == null && doorId == null)
+            throw new ArgumentException("At least one of baId or doorId is required.");
+
+        if (baId   != null && !long.TryParse(baId,   out _))
+            throw new ArgumentException($"baId must be a numeric NetSuite internal ID, got: '{baId}'");
+        if (doorId != null && !long.TryParse(doorId, out _))
+            throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
+
+        var clauses = new List<string>();
+        if (baId   != null) clauses.Add($"j.custentity_cca_brand_ambassador = {baId}");
+        if (doorId != null) clauses.Add($"j.custentity_cca_project_door = {doorId}");
+
+        var where = string.Join("\n  AND ", clauses);
+
+        var query = $"""
+            SELECT TOP 50
+                j.id,
+                j.entityid,
+                BUILTIN.DF(j.entitystatus) AS status,
+                j.jobname                  AS projectName,
+                BUILTIN.DF(j.parent)       AS customerName
+            FROM job j
+            WHERE {where}
+            ORDER BY j.jobname
+            """;
+
+        logger.LogInformation("lookup_project: baId={BaId} doorId={DoorId}", baId, doorId);
+        var result = await client.ExecuteSuiteQLAsync(query, ct);
+        return result.ToJsonString();
+    }
+
     // ── get_door_contacts ──────────────────────────────────────────────────────
 
     [Function(nameof(GetDoorContacts))]
