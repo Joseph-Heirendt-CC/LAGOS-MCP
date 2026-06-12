@@ -393,7 +393,7 @@
         "direction": "In",
         "type": "mcpToolTrigger",
         "toolName": "update_store_visit",
-        "description": "Updates an existing Store Visit record with checklist responses, issue flags, and summary fields. Pass recordId (from create_store_visit or get_recent_store_visits) and a fields JSON object containing only the fields to update. Boolean values must be \u0027T\u0027 (true) or \u0027F\u0027 (false). \n\nAUDIT BOOLEANS (\u0027T\u0027/\u0027F\u0027):\ncustrecord_cca_sv_backstock_inv_audited \u2014 Backstock inventory audit completed\ncustrecord_cca_sv_price_audited \u2014 Price audit completed\ncustrecord_cca_sv_pad_product_audit \u2014 Pad product audit completed\ncustrecord_cca_sv_pres_elem_audit \u2014 Presentation elements audit completed\ncustrecord_cca_sv_fixture_layout_audit \u2014 Fixture layout audit completed\ncustrecord_cca_sv_market_material_audit \u2014 Marketing material audit completed\ncustrecord_cca_sv_caseline_flow_reviewed \u2014 Caseline flow reviewed\ncustrecord_cca_sv_tarnishing_check \u2014 Tarnishing check completed\ncustrecord_cca_sv_vitrine_audited \u2014 Vitrine audited\ncustrecord_cca_sv_sales_floor_rep_verif \u2014 Sales floor rep verified\n\nISSUE FLAGS (\u0027T\u0027/\u0027F\u0027):\ncustrecord_cca_sv_backstock_inv_issue \u2014 Backstock inventory issue identified\ncustrecord_cca_sv_price_issue_id \u2014 Price issue identified\ncustrecord_cca_sv_pad_prod_issue \u2014 Pad product issue identified\ncustrecord_cca_sv_pres_elem_issue \u2014 Presentation elements issue identified\ncustrecord_cca_sv_fixture_layout_issue \u2014 Fixture layout issue identified\ncustrecord_cca_sv_mark_material_issue \u2014 Marketing material issue identified\ncustrecord_cca_sv_caseline_flow_issue \u2014 Caseline flow issue identified\ncustrecord_cca_sv_tarnish_issue \u2014 Tarnishing issue identified\ncustrecord_cca_sv_vitrine_issue_identi \u2014 Vitrine issue identified\ncustrecord_cca_sv_dsa_issue_idenified \u2014 DSA issue identified\ncustrecord_cca_sv_mark_opp_identified \u2014 Marketing opportunity identified\ncustrecord_cca_sv_qual_iss_id \u2014 Quality issue identified\ncustrecord_cca_sv_prod_tags_issue \u2014 Product tags issue identified\ncustrecord_cca_sv_prod_tag_tucked \u2014 Product tag tucked issue\ncustrecord_cca_sv_training_needs_id \u2014 Training needs identified\ncustrecord_cca_sv_space_location_moved \u2014 Space/location moved issue\ncustrecord_cca_sv_incentive_running \u2014 Incentive currently running\ncustrecord_cca_sv_store_aware_incentive \u2014 Store aware of incentive\ncustrecord_cca_sv_competitor_incentives \u2014 Competitor incentives present\n\nTEXT / NUMERIC FIELDS:\ncustrecord_cca_sv_immediate_actions (string) \u2014 Immediate actions taken during visit\ncustrecord_cca_sv_next_visit_focus (string) \u2014 Focus areas for next visit\ncustrecord_cca_sv_caseline_space (number) \u2014 Caseline space count\ncustrecord_cca_sv_gold_pads (number) \u2014 Gold pad count\ncustrecord_cca_sv_numb_pads_mens (number) \u2014 Number of men\u0027s pads\ncustrecord_cca_sv_numb_pads_women (number) \u2014 Number of women\u0027s pads\ncustrecord_cca_sv_total_gold_pads (number) \u2014 Total gold pads\ncustrecord_cca_sv_total_pads (number) \u2014 Total pads\n\nExample: { \u0022custrecord_cca_sv_backstock_inv_audited\u0022: \u0022T\u0022, \u0022custrecord_cca_sv_backstock_inv_issue\u0022: \u0022F\u0022, \u0022custrecord_cca_sv_immediate_actions\u0022: \u0022Replenish pad tray\u0022 }",
+        "description": "Updates an existing Store Visit record with checklist responses, issue flags, and summary fields. Pass recordId and only the fields you want to update. All non-recordId parameters are optional. Boolean fields accept \u0027T\u0027 (true) or \u0027F\u0027 (false) only.",
         "properties": {}
       },
       {
@@ -402,18 +402,372 @@
         "type": "mcpToolProperty",
         "dataType": "String",
         "propertyName": "recordId",
-        "description": "Internal ID of the store visit record",
+        "description": "Internal ID of the store visit record (from create_store_visit or get_recent_store_visits)",
         "isRequired": true,
         "properties": {}
       },
       {
-        "name": "fieldsJson",
+        "name": "backstockInvAudited",
         "direction": "In",
         "type": "mcpToolProperty",
         "dataType": "String",
-        "propertyName": "fields",
-        "description": "Key-value pairs of fields to update",
-        "isRequired": true,
+        "propertyName": "backstockInvAudited",
+        "description": "Backstock inventory audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "priceAudited",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "priceAudited",
+        "description": "Price audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "padProductAudit",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "padProductAudit",
+        "description": "Pad product audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "presElemAudit",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "presElemAudit",
+        "description": "Presentation elements audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "fixtureLayoutAudit",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "fixtureLayoutAudit",
+        "description": "Fixture layout audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "marketMaterialAudit",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "marketMaterialAudit",
+        "description": "Marketing material audit completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "caselineFlowReviewed",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "caselineFlowReviewed",
+        "description": "Caseline flow reviewed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "tarnishingCheck",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "tarnishingCheck",
+        "description": "Tarnishing check completed (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "vitrineAudited",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "vitrineAudited",
+        "description": "Vitrine audited (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "salesFloorRepVerified",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "salesFloorRepVerified",
+        "description": "Sales floor rep verified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "backstockInvIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "backstockInvIssue",
+        "description": "Backstock inventory issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "priceIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "priceIssue",
+        "description": "Price issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "padProdIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "padProdIssue",
+        "description": "Pad product issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "presElemIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "presElemIssue",
+        "description": "Presentation elements issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "fixtureLayoutIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "fixtureLayoutIssue",
+        "description": "Fixture layout issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "markMaterialIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "markMaterialIssue",
+        "description": "Marketing material issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "caselineFlowIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "caselineFlowIssue",
+        "description": "Caseline flow issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "tarnishIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "tarnishIssue",
+        "description": "Tarnishing issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "vitrineIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "vitrineIssue",
+        "description": "Vitrine issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "dsaIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "dsaIssue",
+        "description": "DSA issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "markOppIdentified",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "markOppIdentified",
+        "description": "Marketing opportunity identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "qualIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "qualIssue",
+        "description": "Quality issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "prodTagsIssue",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "prodTagsIssue",
+        "description": "Product tags issue identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "prodTagTucked",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "prodTagTucked",
+        "description": "Product tag tucked issue (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "trainingNeedsIdentified",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "trainingNeedsIdentified",
+        "description": "Training needs identified (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "spaceLocationMoved",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "spaceLocationMoved",
+        "description": "Space/location moved issue (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "incentiveRunning",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "incentiveRunning",
+        "description": "Incentive currently running (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "storeAwareIncentive",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "storeAwareIncentive",
+        "description": "Store aware of incentive (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "competitorIncentives",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "competitorIncentives",
+        "description": "Competitor incentives present (\u0027T\u0027/\u0027F\u0027)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "immediateActions",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "immediateActions",
+        "description": "Immediate actions taken during the visit (free text)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "nextVisitFocus",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "dataType": "String",
+        "propertyName": "nextVisitFocus",
+        "description": "Focus areas for the next visit (free text)",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "caselineSpace",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "caselineSpace",
+        "description": "Caseline space count",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "goldPads",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "goldPads",
+        "description": "Gold pad count",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "numbPadsMens",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "numbPadsMens",
+        "description": "Number of men\u0027s pads",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "numbPadsWomen",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "numbPadsWomen",
+        "description": "Number of women\u0027s pads",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "totalGoldPads",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "totalGoldPads",
+        "description": "Total gold pads",
+        "isRequired": false,
+        "properties": {}
+      },
+      {
+        "name": "totalPads",
+        "direction": "In",
+        "type": "mcpToolProperty",
+        "propertyName": "totalPads",
+        "description": "Total pads",
+        "isRequired": false,
         "properties": {}
       }
     ]
