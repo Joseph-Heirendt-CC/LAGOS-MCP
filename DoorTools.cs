@@ -246,18 +246,18 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         var query = $"""
             SELECT TOP 100
-                c.id,
-                c.firstname,
-                c.lastname,
-                c.email,
-                c.phone,
-                c.title,
-                BUILTIN.DF(cc.contactrole) AS role
-            FROM contact c
-            JOIN customercontact cc ON cc.contact = c.id
-            WHERE cc.entity = {doorId}
-              AND c.isinactive = 'F'
-            ORDER BY c.lastname, c.firstname
+                ct.id,
+                ct.firstname,
+                ct.lastname,
+                ct.email,
+                ct.phone,
+                ct.title,
+                BUILTIN.DF(ccr.role) AS role
+            FROM CompanyContactRelationship ccr
+            JOIN contact ct ON ct.id = ccr.contact
+            WHERE ccr.company = {doorId}
+              AND ct.isinactive = 'F'
+            ORDER BY ct.lastname, ct.firstname
             """;
 
         logger.LogInformation("get_door_contacts: doorId={DoorId}", doorId);
