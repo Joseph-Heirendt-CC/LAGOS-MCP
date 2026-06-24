@@ -66,13 +66,18 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
 
     // ── update_store_visit ─────────────────────────────────────────────────────
 
-    // Validates and adds a 'T'/'F' boolean field to the update body.
-    private static void AddTF(JsonObject o, string key, string? v)
+    // Parses a boolean string and writes a strict JSON boolean (true/false) to the update body.
+    // Accepts "true"/"false" (canonical) and "T"/"F" (legacy), case-insensitive.
+    private static void AddBool(JsonObject o, string key, string? v)
     {
         if (v == null) return;
-        if (v != "T" && v != "F")
-            throw new ArgumentException($"'{key}' must be 'T' or 'F', got: '{v}'");
-        o[key] = v;
+        bool parsed = v.Trim().ToUpperInvariant() switch
+        {
+            "T" or "TRUE"  => true,
+            "F" or "FALSE" => false,
+            _ => throw new ArgumentException($"'{key}' must be true or false, got: '{v}'")
+        };
+        o[key] = JsonValue.Create(parsed);
     }
 
     [Function(nameof(UpdateStoreVisit))]
@@ -80,40 +85,40 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolTrigger("update_store_visit",
             "Updates an existing Store Visit record with checklist responses, issue flags, and summary fields. " +
             "Pass recordId and only the fields you want to update. All non-recordId parameters are optional. " +
-            "Boolean fields accept 'T' (true) or 'F' (false) only.")]
+            "Boolean fields must be strict boolean: true or false (no quotes, no 'T'/'F').")]
         ToolInvocationContext toolCall,
         [McpToolProperty("recordId",                          "Internal ID of the store visit record (from create_store_visit or get_recent_store_visits)", true)] string recordId,
         // ── Audit booleans ─────────────────────────────────────────────────────
-        [McpToolProperty("backstockInvAudited",               "Backstock inventory audit completed ('T'/'F')")] string? backstockInvAudited,
-        [McpToolProperty("priceAudited",                      "Price audit completed ('T'/'F')")] string? priceAudited,
-        [McpToolProperty("padProductAudit",                   "Pad product audit completed ('T'/'F')")] string? padProductAudit,
-        [McpToolProperty("presElemAudit",                     "Presentation elements audit completed ('T'/'F')")] string? presElemAudit,
-        [McpToolProperty("fixtureLayoutAudit",                "Fixture layout audit completed ('T'/'F')")] string? fixtureLayoutAudit,
-        [McpToolProperty("marketMaterialAudit",               "Marketing material audit completed ('T'/'F')")] string? marketMaterialAudit,
-        [McpToolProperty("caselineFlowReviewed",              "Caseline flow reviewed ('T'/'F')")] string? caselineFlowReviewed,
-        [McpToolProperty("tarnishingCheck",                   "Tarnishing check completed ('T'/'F')")] string? tarnishingCheck,
-        [McpToolProperty("vitrineAudited",                    "Vitrine audited ('T'/'F')")] string? vitrineAudited,
-        [McpToolProperty("salesFloorRepVerified",             "Sales floor rep verified ('T'/'F')")] string? salesFloorRepVerified,
+        [McpToolProperty("backstockInvAudited",               "Backstock inventory audit completed (true/false)")] string? backstockInvAudited,
+        [McpToolProperty("priceAudited",                      "Price audit completed (true/false)")] string? priceAudited,
+        [McpToolProperty("padProductAudit",                   "Pad product audit completed (true/false)")] string? padProductAudit,
+        [McpToolProperty("presElemAudit",                     "Presentation elements audit completed (true/false)")] string? presElemAudit,
+        [McpToolProperty("fixtureLayoutAudit",                "Fixture layout audit completed (true/false)")] string? fixtureLayoutAudit,
+        [McpToolProperty("marketMaterialAudit",               "Marketing material audit completed (true/false)")] string? marketMaterialAudit,
+        [McpToolProperty("caselineFlowReviewed",              "Caseline flow reviewed (true/false)")] string? caselineFlowReviewed,
+        [McpToolProperty("tarnishingCheck",                   "Tarnishing check completed (true/false)")] string? tarnishingCheck,
+        [McpToolProperty("vitrineAudited",                    "Vitrine audited (true/false)")] string? vitrineAudited,
+        [McpToolProperty("salesFloorRepVerified",             "Sales floor rep verified (true/false)")] string? salesFloorRepVerified,
         // ── Issue flags ────────────────────────────────────────────────────────
-        [McpToolProperty("backstockInvIssue",                 "Backstock inventory issue identified ('T'/'F')")] string? backstockInvIssue,
-        [McpToolProperty("priceIssue",                        "Price issue identified ('T'/'F')")] string? priceIssue,
-        [McpToolProperty("padProdIssue",                      "Pad product issue identified ('T'/'F')")] string? padProdIssue,
-        [McpToolProperty("presElemIssue",                     "Presentation elements issue identified ('T'/'F')")] string? presElemIssue,
-        [McpToolProperty("fixtureLayoutIssue",                "Fixture layout issue identified ('T'/'F')")] string? fixtureLayoutIssue,
-        [McpToolProperty("markMaterialIssue",                 "Marketing material issue identified ('T'/'F')")] string? markMaterialIssue,
-        [McpToolProperty("caselineFlowIssue",                 "Caseline flow issue identified ('T'/'F')")] string? caselineFlowIssue,
-        [McpToolProperty("tarnishIssue",                      "Tarnishing issue identified ('T'/'F')")] string? tarnishIssue,
-        [McpToolProperty("vitrineIssue",                      "Vitrine issue identified ('T'/'F')")] string? vitrineIssue,
-        [McpToolProperty("dsaIssue",                          "DSA issue identified ('T'/'F')")] string? dsaIssue,
-        [McpToolProperty("markOppIdentified",                 "Marketing opportunity identified ('T'/'F')")] string? markOppIdentified,
-        [McpToolProperty("qualIssue",                         "Quality issue identified ('T'/'F')")] string? qualIssue,
-        [McpToolProperty("prodTagsIssue",                     "Product tags issue identified ('T'/'F')")] string? prodTagsIssue,
-        [McpToolProperty("prodTagTucked",                     "Product tag tucked issue ('T'/'F')")] string? prodTagTucked,
-        [McpToolProperty("trainingNeedsIdentified",           "Training needs identified ('T'/'F')")] string? trainingNeedsIdentified,
-        [McpToolProperty("spaceLocationMoved",                "Space/location moved issue ('T'/'F')")] string? spaceLocationMoved,
-        [McpToolProperty("incentiveRunning",                  "Incentive currently running ('T'/'F')")] string? incentiveRunning,
-        [McpToolProperty("storeAwareIncentive",               "Store aware of incentive ('T'/'F')")] string? storeAwareIncentive,
-        [McpToolProperty("competitorIncentives",              "Competitor incentives present ('T'/'F')")] string? competitorIncentives,
+        [McpToolProperty("backstockInvIssue",                 "Backstock inventory issue identified (true/false)")] string? backstockInvIssue,
+        [McpToolProperty("priceIssue",                        "Price issue identified (true/false)")] string? priceIssue,
+        [McpToolProperty("padProdIssue",                      "Pad product issue identified (true/false)")] string? padProdIssue,
+        [McpToolProperty("presElemIssue",                     "Presentation elements issue identified (true/false)")] string? presElemIssue,
+        [McpToolProperty("fixtureLayoutIssue",                "Fixture layout issue identified (true/false)")] string? fixtureLayoutIssue,
+        [McpToolProperty("markMaterialIssue",                 "Marketing material issue identified (true/false)")] string? markMaterialIssue,
+        [McpToolProperty("caselineFlowIssue",                 "Caseline flow issue identified (true/false)")] string? caselineFlowIssue,
+        [McpToolProperty("tarnishIssue",                      "Tarnishing issue identified (true/false)")] string? tarnishIssue,
+        [McpToolProperty("vitrineIssue",                      "Vitrine issue identified (true/false)")] string? vitrineIssue,
+        [McpToolProperty("dsaIssue",                          "DSA issue identified (true/false)")] string? dsaIssue,
+        [McpToolProperty("markOppIdentified",                 "Marketing opportunity identified (true/false)")] string? markOppIdentified,
+        [McpToolProperty("qualIssue",                         "Quality issue identified (true/false)")] string? qualIssue,
+        [McpToolProperty("prodTagsIssue",                     "Product tags issue identified (true/false)")] string? prodTagsIssue,
+        [McpToolProperty("prodTagTucked",                     "Product tag tucked issue (true/false)")] string? prodTagTucked,
+        [McpToolProperty("trainingNeedsIdentified",           "Training needs identified (true/false)")] string? trainingNeedsIdentified,
+        [McpToolProperty("spaceLocationMoved",                "Space/location moved issue (true/false)")] string? spaceLocationMoved,
+        [McpToolProperty("incentiveRunning",                  "Incentive currently running (true/false)")] string? incentiveRunning,
+        [McpToolProperty("storeAwareIncentive",               "Store aware of incentive (true/false)")] string? storeAwareIncentive,
+        [McpToolProperty("competitorIncentives",              "Competitor incentives present (true/false)")] string? competitorIncentives,
         // ── Text fields ────────────────────────────────────────────────────────
         [McpToolProperty("immediateActions",                  "Immediate actions taken during the visit (free text)")] string? immediateActions,
         [McpToolProperty("nextVisitFocus",                    "Focus areas for the next visit (free text)")] string? nextVisitFocus,
@@ -130,37 +135,37 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         var body = new JsonObject();
 
         // Audit booleans
-        AddTF(body, "custrecord_cca_sv_backstock_inv_audited",  backstockInvAudited);
-        AddTF(body, "custrecord_cca_sv_price_audited",          priceAudited);
-        AddTF(body, "custrecord_cca_sv_pad_product_audit",      padProductAudit);
-        AddTF(body, "custrecord_cca_sv_pres_elem_audit",        presElemAudit);
-        AddTF(body, "custrecord_cca_sv_fixture_layout_audit",   fixtureLayoutAudit);
-        AddTF(body, "custrecord_cca_sv_market_material_audit",  marketMaterialAudit);
-        AddTF(body, "custrecord_cca_sv_caseline_flow_reviewed", caselineFlowReviewed);
-        AddTF(body, "custrecord_cca_sv_tarnishing_check",       tarnishingCheck);
-        AddTF(body, "custrecord_cca_sv_vitrine_audited",        vitrineAudited);
-        AddTF(body, "custrecord_cca_sv_sales_floor_rep_verif",  salesFloorRepVerified);
+        AddBool(body, "custrecord_cca_sv_backstock_inv_audited",  backstockInvAudited);
+        AddBool(body, "custrecord_cca_sv_price_audited",          priceAudited);
+        AddBool(body, "custrecord_cca_sv_pad_product_audit",      padProductAudit);
+        AddBool(body, "custrecord_cca_sv_pres_elem_audit",        presElemAudit);
+        AddBool(body, "custrecord_cca_sv_fixture_layout_audit",   fixtureLayoutAudit);
+        AddBool(body, "custrecord_cca_sv_market_material_audit",  marketMaterialAudit);
+        AddBool(body, "custrecord_cca_sv_caseline_flow_reviewed", caselineFlowReviewed);
+        AddBool(body, "custrecord_cca_sv_tarnishing_check",       tarnishingCheck);
+        AddBool(body, "custrecord_cca_sv_vitrine_audited",        vitrineAudited);
+        AddBool(body, "custrecord_cca_sv_sales_floor_rep_verif",  salesFloorRepVerified);
 
         // Issue flags
-        AddTF(body, "custrecord_cca_sv_backstock_inv_issue",    backstockInvIssue);
-        AddTF(body, "custrecord_cca_sv_price_issue_id",         priceIssue);
-        AddTF(body, "custrecord_cca_sv_pad_prod_issue",         padProdIssue);
-        AddTF(body, "custrecord_cca_sv_pres_elem_issue",        presElemIssue);
-        AddTF(body, "custrecord_cca_sv_fixture_layout_issue",   fixtureLayoutIssue);
-        AddTF(body, "custrecord_cca_sv_mark_material_issue",    markMaterialIssue);
-        AddTF(body, "custrecord_cca_sv_caseline_flow_issue",    caselineFlowIssue);
-        AddTF(body, "custrecord_cca_sv_tarnish_issue",          tarnishIssue);
-        AddTF(body, "custrecord_cca_sv_vitrine_issue_identi",   vitrineIssue);
-        AddTF(body, "custrecord_cca_sv_dsa_issue_idenified",    dsaIssue);
-        AddTF(body, "custrecord_cca_sv_mark_opp_identified",    markOppIdentified);
-        AddTF(body, "custrecord_cca_sv_qual_iss_id",            qualIssue);
-        AddTF(body, "custrecord_cca_sv_prod_tags_issue",        prodTagsIssue);
-        AddTF(body, "custrecord_cca_sv_prod_tag_tucked",        prodTagTucked);
-        AddTF(body, "custrecord_cca_sv_training_needs_id",      trainingNeedsIdentified);
-        AddTF(body, "custrecord_cca_sv_space_location_moved",   spaceLocationMoved);
-        AddTF(body, "custrecord_cca_sv_incentive_running",      incentiveRunning);
-        AddTF(body, "custrecord_cca_sv_store_aware_incentive",  storeAwareIncentive);
-        AddTF(body, "custrecord_cca_sv_competitor_incentives",  competitorIncentives);
+        AddBool(body, "custrecord_cca_sv_backstock_inv_issue",    backstockInvIssue);
+        AddBool(body, "custrecord_cca_sv_price_issue_id",         priceIssue);
+        AddBool(body, "custrecord_cca_sv_pad_prod_issue",         padProdIssue);
+        AddBool(body, "custrecord_cca_sv_pres_elem_issue",        presElemIssue);
+        AddBool(body, "custrecord_cca_sv_fixture_layout_issue",   fixtureLayoutIssue);
+        AddBool(body, "custrecord_cca_sv_mark_material_issue",    markMaterialIssue);
+        AddBool(body, "custrecord_cca_sv_caseline_flow_issue",    caselineFlowIssue);
+        AddBool(body, "custrecord_cca_sv_tarnish_issue",          tarnishIssue);
+        AddBool(body, "custrecord_cca_sv_vitrine_issue_identi",   vitrineIssue);
+        AddBool(body, "custrecord_cca_sv_dsa_issue_idenified",    dsaIssue);
+        AddBool(body, "custrecord_cca_sv_mark_opp_identified",    markOppIdentified);
+        AddBool(body, "custrecord_cca_sv_qual_iss_id",            qualIssue);
+        AddBool(body, "custrecord_cca_sv_prod_tags_issue",        prodTagsIssue);
+        AddBool(body, "custrecord_cca_sv_prod_tag_tucked",        prodTagTucked);
+        AddBool(body, "custrecord_cca_sv_training_needs_id",      trainingNeedsIdentified);
+        AddBool(body, "custrecord_cca_sv_space_location_moved",   spaceLocationMoved);
+        AddBool(body, "custrecord_cca_sv_incentive_running",      incentiveRunning);
+        AddBool(body, "custrecord_cca_sv_store_aware_incentive",  storeAwareIncentive);
+        AddBool(body, "custrecord_cca_sv_competitor_incentives",  competitorIncentives);
 
         // Text fields
         if (immediateActions != null) body["custrecord_cca_sv_immediate_actions"] = immediateActions;
