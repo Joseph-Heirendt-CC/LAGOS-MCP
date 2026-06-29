@@ -122,6 +122,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         // ── Text fields ────────────────────────────────────────────────────────
         [McpToolProperty("immediateActions",                  "Immediate actions taken during the visit (free text)")] string? immediateActions,
         [McpToolProperty("nextVisitFocus",                    "Focus areas for the next visit (free text)")] string? nextVisitFocus,
+        [McpToolProperty("sharepointUrl",                     "SharePoint folder URL for this visit's documents (populated by the LLM when the SharePoint folder is created in M365)")] string? sharepointUrl,
         // ── Numeric fields ─────────────────────────────────────────────────────
         [McpToolProperty("caselineSpace",                     "Caseline space count")] int? caselineSpace,
         [McpToolProperty("goldPads",                          "Gold pad count")] int? goldPads,
@@ -170,6 +171,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         // Text fields
         if (immediateActions != null) body["custrecord_cca_sv_immediate_actions"] = immediateActions;
         if (nextVisitFocus   != null) body["custrecord_cca_sv_next_visit_focus"]   = nextVisitFocus;
+        if (sharepointUrl    != null) body["custrecord_cca_sv_sharepoint_url"]     = sharepointUrl;
 
         // Numeric fields
         if (caselineSpace  != null) body["custrecord_cca_sv_caseline_space"]  = caselineSpace;
