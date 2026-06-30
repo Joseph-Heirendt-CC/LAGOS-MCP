@@ -38,12 +38,12 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("doorId",            "Customer internal ID from lookup_door", true)] string doorId,
         [McpToolProperty("brandAmbassadorId", "Employee internal ID of the visiting BA", true)] string brandAmbassadorId,
         [McpToolProperty("visitDate",         "Visit date in any recognizable format (e.g. 'June 2nd 2026', '6/2/26', '2026-06-02')", true)] string visitDate,
-        [McpToolProperty("name",              "Title of this visit record — NOT the store or company name (e.g. 'Smith - Nordstrom Visit 6/11/2026'). The store is identified by doorId.", true)] string name,
+        [McpToolProperty("name",              "Title of this visit record — Door concatenated with Date '-' (e.g. 'Nordstrom Visit-6/11/2026'). The store is identified by doorId.", true)] string name,
         FunctionContext context,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("name is required and cannot be empty. Provide a visit record title such as 'Smith - Nordstrom Visit 6/11/2026', not the store or company name.");
+            throw new ArgumentException("name is required and cannot be empty. Provide a visit record title such as 'Nordstrom Visit-6/11/2026'.");
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
         if (!long.TryParse(brandAmbassadorId, out _))
