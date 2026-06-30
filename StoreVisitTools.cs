@@ -83,7 +83,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
     [Function(nameof(UpdateStoreVisit))]
     public async Task<string> UpdateStoreVisit(
         [McpToolTrigger("update_store_visit",
-            "Updates an existing Store Visit record with checklist responses, issue flags, and summary fields. " +
+            "Updates an existing Store Visit record with checklist responses, issue flags, notes, corrective actions, and summary fields. " +
             "Pass recordId and only the fields you want to update. All non-recordId parameters are optional. " +
             "Boolean fields must be strict boolean: true or false (no quotes, no 'T'/'F').")]
         ToolInvocationContext toolCall,
@@ -123,6 +123,34 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("immediateActions",                  "Immediate actions taken during the visit (free text)")] string? immediateActions,
         [McpToolProperty("nextVisitFocus",                    "Focus areas for the next visit (free text)")] string? nextVisitFocus,
         [McpToolProperty("sharepointUrl",                     "SharePoint folder URL for this visit's documents (populated by the LLM when the SharePoint folder is created in M365)")] string? sharepointUrl,
+        [McpToolProperty("presElemNotes",                     "Presentation elements notes (free text)")] string? presElemNotes,
+        [McpToolProperty("additionalContacts",                "Additional store contacts (free text)")] string? additionalContacts,
+        [McpToolProperty("backstockInvCorrectiveActions",     "Backstock inventory corrective actions (free text)")] string? backstockInvCorrectiveActions,
+        [McpToolProperty("caselineFlowCorrectiveActions",     "Caseline flow corrective actions (free text)")] string? caselineFlowCorrectiveActions,
+        [McpToolProperty("caselineFlowNotes",                 "Caseline flow notes (free text)")] string? caselineFlowNotes,
+        [McpToolProperty("compVisMerchNotes",                 "Competitor visual merchandising notes (free text)")] string? compVisMerchNotes,
+        [McpToolProperty("fixtureLayoutCorrectiveActions",    "Fixture layout corrective actions (free text)")] string? fixtureLayoutCorrectiveActions,
+        [McpToolProperty("fixtureLayoutNotes",                "Fixture layout notes (free text)")] string? fixtureLayoutNotes,
+        [McpToolProperty("invProdRepNotes",                   "Inventory and product representation notes (free text)")] string? invProdRepNotes,
+        [McpToolProperty("marketMaterialCorrectiveActions",   "Marketing material corrective actions (free text)")] string? marketMaterialCorrectiveActions,
+        [McpToolProperty("marketMaterialNotes",                "Marketing material notes (free text)")] string? marketMaterialNotes,
+        [McpToolProperty("marketingOpportunityNotes",         "Marketing opportunity notes (free text)")] string? marketingOpportunityNotes,
+        [McpToolProperty("padProductCorrectiveActions",       "Pad product corrective actions (free text)")] string? padProductCorrectiveActions,
+        [McpToolProperty("padProductNotes",                   "Pad product notes (free text)")] string? padProductNotes,
+        [McpToolProperty("presElemCorrectiveActions",         "Presentation elements corrective actions (free text)")] string? presElemCorrectiveActions,
+        [McpToolProperty("priceIssueCorrectiveActions",       "Price issue corrective actions (free text)")] string? priceIssueCorrectiveActions,
+        [McpToolProperty("priceNotes",                        "Price notes (free text)")] string? priceNotes,
+        [McpToolProperty("productTagCorrectiveActions",       "Product tag corrective actions (free text)")] string? productTagCorrectiveActions,
+        [McpToolProperty("productTagNotes",                   "Product tag notes (free text)")] string? productTagNotes,
+        [McpToolProperty("qualityCorrectiveActions",          "Quality corrective actions (free text)")] string? qualityCorrectiveActions,
+        [McpToolProperty("qualityNotes",                      "Quality notes (free text)")] string? qualityNotes,
+        [McpToolProperty("spaceLocationNotes",                "Space/location notes (free text)")] string? spaceLocationNotes,
+        [McpToolProperty("tarnishCorrectiveActions",          "Tarnishing corrective actions (free text)")] string? tarnishCorrectiveActions,
+        [McpToolProperty("tarnishingNotes",                   "Tarnishing notes (free text)")] string? tarnishingNotes,
+        [McpToolProperty("trainingNeedsNotes",                "Training needs notes (free text)")] string? trainingNeedsNotes,
+        [McpToolProperty("vitrineCorrectiveActions",          "Vitrine corrective actions (free text)")] string? vitrineCorrectiveActions,
+        [McpToolProperty("vitrineNotes",                      "Vitrine notes (free text)")] string? vitrineNotes,
+        [McpToolProperty("dsaCorrectiveActions",              "DSA corrective actions (free text)")] string? dsaCorrectiveActions,
         // ── Numeric fields ─────────────────────────────────────────────────────
         [McpToolProperty("caselineSpace",                     "Caseline space count")] int? caselineSpace,
         [McpToolProperty("goldPads",                          "Gold pad count")] int? goldPads,
@@ -172,6 +200,34 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         if (immediateActions != null) body["custrecord_cca_sv_immediate_actions"] = immediateActions;
         if (nextVisitFocus   != null) body["custrecord_cca_sv_next_visit_focus"]   = nextVisitFocus;
         if (sharepointUrl    != null) body["custrecord_cca_sv_sharepoint_url"]     = sharepointUrl;
+        if (presElemNotes                   != null) body["custrecord_cca_pres_elem_notes"]            = presElemNotes;
+        if (additionalContacts              != null) body["custrecord_cca_sv_additional_contacts"]     = additionalContacts;
+        if (backstockInvCorrectiveActions   != null) body["custrecord_cca_sv_backstock_inv_corr_act"]  = backstockInvCorrectiveActions;
+        if (caselineFlowCorrectiveActions   != null) body["custrecord_cca_sv_case_flow_correct_act"]   = caselineFlowCorrectiveActions;
+        if (caselineFlowNotes               != null) body["custrecord_cca_sv_caseline_flow_notes"]     = caselineFlowNotes;
+        if (compVisMerchNotes               != null) body["custrecord_cca_sv_comp_vis_merch_notes"]    = compVisMerchNotes;
+        if (fixtureLayoutCorrectiveActions  != null) body["custrecord_cca_sv_fix_layout_correct_act"]  = fixtureLayoutCorrectiveActions;
+        if (fixtureLayoutNotes              != null) body["custrecord_cca_sv_fixture_layout_notes"]    = fixtureLayoutNotes;
+        if (invProdRepNotes                 != null) body["custrecord_cca_sv_inv_prod_rep_notes"]      = invProdRepNotes;
+        if (marketMaterialCorrectiveActions != null) body["custrecord_cca_sv_mark_mater_correct_act"]  = marketMaterialCorrectiveActions;
+        if (marketMaterialNotes             != null) body["custrecord_cca_sv_mark_material_notes"]     = marketMaterialNotes;
+        if (marketingOpportunityNotes       != null) body["custrecord_cca_sv_mark_opp_notes"]          = marketingOpportunityNotes;
+        if (padProductCorrectiveActions     != null) body["custrecord_cca_sv_pad_prod_correct_act"]    = padProductCorrectiveActions;
+        if (padProductNotes                 != null) body["custrecord_cca_sv_pad_product_notes"]       = padProductNotes;
+        if (presElemCorrectiveActions       != null) body["custrecord_cca_sv_pres_elem_correct_act"]   = presElemCorrectiveActions;
+        if (priceIssueCorrectiveActions     != null) body["custrecord_cca_sv_price_issue_corr_act"]    = priceIssueCorrectiveActions;
+        if (priceNotes                      != null) body["custrecord_cca_sv_price_notes"]             = priceNotes;
+        if (productTagCorrectiveActions     != null) body["custrecord_cca_sv_prod_tag_correct_act"]    = productTagCorrectiveActions;
+        if (productTagNotes                 != null) body["custrecord_cca_sv_prod_tag_notes"]          = productTagNotes;
+        if (qualityCorrectiveActions        != null) body["custrecord_cca_sv_quality_correct_act"]     = qualityCorrectiveActions;
+        if (qualityNotes                    != null) body["custrecord_cca_sv_quality_notes"]           = qualityNotes;
+        if (spaceLocationNotes              != null) body["custrecord_cca_sv_space_location_notes"]    = spaceLocationNotes;
+        if (tarnishCorrectiveActions        != null) body["custrecord_cca_sv_tarnish_correct_act"]     = tarnishCorrectiveActions;
+        if (tarnishingNotes                 != null) body["custrecord_cca_sv_tarnishing_notes"]        = tarnishingNotes;
+        if (trainingNeedsNotes              != null) body["custrecord_cca_sv_training_needs_notes"]    = trainingNeedsNotes;
+        if (vitrineCorrectiveActions        != null) body["custrecord_cca_sv_vitrine_correct_act"]     = vitrineCorrectiveActions;
+        if (vitrineNotes                    != null) body["custrecord_cca_sv_vitrine_notes"]           = vitrineNotes;
+        if (dsaCorrectiveActions            != null) body["custrecord_cca_sv_dsa_correct_act"]         = dsaCorrectiveActions;
 
         // Numeric fields
         if (caselineSpace  != null) body["custrecord_cca_sv_caseline_space"]  = caselineSpace;
@@ -195,7 +251,8 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
     public async Task<string> GetRecentStoreVisits(
         [McpToolTrigger("get_recent_store_visits",
             "Retrieves the most recent Store Visit records for a Door, used to generate the Pre-Visit Summary. " +
-            "Returns visit date, type, brand ambassador, immediate actions, next visit focus, total pads, and total gold pads per visit. " +
+            "Returns visit date, type, brand ambassador, project, visit summary, immediate actions, next visit focus, " +
+            "sharepoint URL, total pads, total gold pads, and corrective-action notes across all issue categories per visit. " +
             "Use the returned id as recordId when calling update_store_visit on an existing record. " +
             "Requires doorId from lookup_door. Optional limit (default 5, max 50).")]
         ToolInvocationContext toolCall,
@@ -213,13 +270,46 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             SELECT TOP {effectiveLimit}
                 sv.id,
                 sv.name,
+                sv.lastmodified,
+                sv.created,
                 sv.custrecord_cca_sv_visit_date,
                 BUILTIN.DF(sv.custrecord_cca_sv_visit_type)          AS visitType,
                 BUILTIN.DF(sv.custrecord_cca_sv_brand_ambassador)    AS brandAmbassador,
+                sv.custrecord_cca_sv_project,
+                sv.custrecord_cca_sv_visit_summary,
                 sv.custrecord_cca_sv_immediate_actions,
                 sv.custrecord_cca_sv_next_visit_focus,
+                sv.custrecord_cca_sv_sharepoint_url,
                 sv.custrecord_cca_sv_total_pads,
-                sv.custrecord_cca_sv_total_gold_pads
+                sv.custrecord_cca_sv_total_gold_pads,
+                sv.custrecord_cca_sv_backstock_inv_corr_act,
+                sv.custrecord_cca_sv_pad_prod_correct_act,
+                sv.custrecord_cca_sv_fix_layout_correct_act,
+                sv.custrecord_cca_sv_case_flow_correct_act,
+                sv.custrecord_cca_sv_pres_elem_correct_act,
+                sv.custrecord_cca_sv_tarnish_correct_act,
+                sv.custrecord_cca_sv_prod_tag_correct_act,
+                sv.custrecord_cca_sv_quality_correct_act,
+                sv.custrecord_cca_sv_mark_mater_correct_act,
+                sv.custrecord_cca_sv_vitrine_correct_act,
+                sv.custrecord_cca_sv_dsa_correct_act,
+                sv.custrecord_cca_pres_elem_notes,
+                sv.custrecord_cca_sv_additional_contacts,
+                sv.custrecord_cca_sv_caseline_flow_notes,
+                sv.custrecord_cca_sv_comp_vis_merch_notes,
+                sv.custrecord_cca_sv_fixture_layout_notes,
+                sv.custrecord_cca_sv_inv_prod_rep_notes,
+                sv.custrecord_cca_sv_mark_material_notes,
+                sv.custrecord_cca_sv_mark_opp_notes,
+                sv.custrecord_cca_sv_pad_product_notes,
+                sv.custrecord_cca_sv_price_notes,
+                sv.custrecord_cca_sv_price_issue_corr_act,
+                sv.custrecord_cca_sv_prod_tag_notes,
+                sv.custrecord_cca_sv_quality_notes,
+                sv.custrecord_cca_sv_space_location_notes,
+                sv.custrecord_cca_sv_tarnishing_notes,
+                sv.custrecord_cca_sv_training_needs_notes,
+                sv.custrecord_cca_sv_vitrine_notes
             FROM customrecord_cca_store_visit sv
             WHERE sv.custrecord_cca_sv_door = {doorId}
             ORDER BY sv.custrecord_cca_sv_visit_date DESC

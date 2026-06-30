@@ -59,9 +59,18 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 BUILTIN.DF(c.custentity_cca_brand_ambassador) AS brandAmbassador,
                 BUILTIN.DF(c.salesrep)           AS wholesaleBrandManager,
                 BUILTIN.DF(c.custentity_cca_planner)       AS planner,
-                BUILTIN.DF(c.subsidiary)                   AS subsidiary
+                BUILTIN.DF(c.subsidiary)                   AS subsidiary,
+                c.custentity_cca_visit_hours,
+                c.custentity_cca_door_number,
+                c.custentity_cca_sharepoint_url,
+                dt.name AS door_type,
+                t.name  AS territory
             FROM customer c
             {addressJoin}
+            LEFT OUTER JOIN customlist_cca_door_type dt
+                ON dt.id = c.custentity_cca_door_type
+            LEFT OUTER JOIN customlist_cca_ba_territory t
+                ON t.id = c.custentity_cca_territory
             WHERE {where}
             ORDER BY c.companyname
             """;
@@ -172,8 +181,11 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 e.entityid,
                 e.firstname,
                 e.lastname,
-                e.email
+                e.email,
+                el.name AS ba_territory
             FROM employee e
+            LEFT OUTER JOIN customlist_cca_ba_territory el
+                ON el.id = e.custentity_cca_ba_territory
             WHERE {where}
             ORDER BY e.lastname, e.firstname
             """;
@@ -217,8 +229,15 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 j.entityid,
                 BUILTIN.DF(j.entitystatus) AS status,
                 j.jobname                  AS projectName,
-                BUILTIN.DF(j.parent)       AS customerName
+                BUILTIN.DF(j.parent)       AS customerName,
+                pm.entityid                AS project_manager,
+                ba.entityid                AS brand_ambassador,
+                j.custentity_cca_special_requests
             FROM job j
+            LEFT OUTER JOIN employee pm
+                ON pm.id = j.projectmanager
+            LEFT OUTER JOIN employee ba
+                ON ba.id = j.custentity_cca_brand_ambassador
             WHERE {where}
             ORDER BY j.jobname
             """;
@@ -246,18 +265,19 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         var query = $"""
             SELECT TOP 100
-                ct.id,
-                ct.firstname,
-                ct.lastname,
-                ct.email,
-                ct.phone,
-                ct.title,
-                BUILTIN.DF(ccr.role) AS role
-            FROM CompanyContactRelationship ccr
-            JOIN contact ct ON ct.id = ccr.contact
-            WHERE ccr.company = {doorId}
-              AND ct.isinactive = 'F'
-            ORDER BY ct.lastname, ct.firstname
+                con.id,
+                con.firstname,
+                con.lastname,
+                con.email,
+                con.phone,
+                con.title,
+                ct.name AS contact_type
+            FROM contact con
+            LEFT OUTER JOIN customlist_cca_contact_type_list ct
+                ON ct.id = con.custentity_cca_contact_type
+            WHERE con.company = {doorId}
+              AND con.isinactive = 'F'
+            ORDER BY con.lastname, con.firstname
             """;
 
         logger.LogInformation("get_door_contacts: doorId={DoorId}", doorId);
@@ -302,6 +322,67 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
             """;
 
         logger.LogInformation("get_open_tasks_for_door: doorId={DoorId} limit={Limit}", doorId, effectiveLimit);
+        var result = await client.ExecuteSuiteQLAsync(query, ct);
+        return result.ToJsonString();
+    }
+
+    // ── get_tasks_for_store_visits ─────────────────────────────────────────────
+
+    [Function(nameof(GetTasksForStoreVisits))]
+    public async Task<string> GetTasksForStoreVisits(
+        [McpToolTrigger("get_tasks_for_store_visits",
+            "Returns Tasks linked to one or more recent Store Visits, so the BA can review unresolved escalations " +
+            "and action items from prior visits before or during a new visit. " +
+            "Pass 1 to 3 Store Visit internal IDs (visitId1 required; visitId2/visitId3 optional) from get_recent_store_visits — " +
+            "the BA selects how many recent visits' worth of tasks to surface. " +
+            "Returns task id, title, assigned employee, priority, status (resolved to a readable label), start date, " +
+            "completed date, related store visit name, escalation type, and door.")]
+        ToolInvocationContext toolCall,
+        [McpToolProperty("visitId1", "Store Visit internal ID — most recent visit, from get_recent_store_visits", true)] string visitId1,
+        [McpToolProperty("visitId2", "Store Visit internal ID — 2nd most recent visit (optional)")] string? visitId2,
+        [McpToolProperty("visitId3", "Store Visit internal ID — 3rd most recent visit (optional)")] string? visitId3,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        var visitIds = new List<string> { visitId1 };
+        if (visitId2 != null) visitIds.Add(visitId2);
+        if (visitId3 != null) visitIds.Add(visitId3);
+
+        foreach (var id in visitIds)
+            if (!long.TryParse(id, out _))
+                throw new ArgumentException($"Store Visit IDs must be numeric NetSuite internal IDs, got: '{id}'");
+
+        var inClause = string.Join(", ", visitIds);
+
+        var query = $"""
+            SELECT
+                t.id,
+                t.title,
+                e.entityid                 AS assigned_to,
+                t.priority,
+                CASE t.status
+                    WHEN 'COMPLETE' THEN 'Completed'
+                    WHEN 'PROGRESS' THEN 'In Progress'
+                    WHEN 'NOTSTART' THEN 'Not Started'
+                END                         AS status,
+                t.startdate,
+                t.completeddate,
+                sv.name                     AS related_store_visit,
+                et.name                     AS escalation_type,
+                c.companyname               AS door
+            FROM task t
+            LEFT OUTER JOIN employee e
+                ON e.id = t.assigned
+            LEFT OUTER JOIN customrecord_cca_store_visit sv
+                ON sv.id = t.custevent_cca_related_store_visit
+            LEFT OUTER JOIN customlist_cca_sv_escal_type et
+                ON et.id = t.custevent_cca_sv_escal_type
+            LEFT OUTER JOIN customer c
+                ON c.id = t.custevent_cca_door
+            WHERE t.custevent_cca_related_store_visit IN ({inClause})
+            """;
+
+        logger.LogInformation("get_tasks_for_store_visits: visitIds={VisitIds}", inClause);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
         return result.ToJsonString();
     }
