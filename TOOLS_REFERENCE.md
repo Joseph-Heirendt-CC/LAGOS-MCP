@@ -220,7 +220,7 @@ All tools are exposed via the `StoreVisitWorkflow` MCP server (Azure Functions, 
 | `doorId` | string | Yes | Customer internal ID from `lookup_door` |
 | `brandAmbassadorId` | string | Yes | Employee internal ID from `lookup_brand_ambassador` |
 | `visitDate` | string | Yes | Any recognizable date format — normalized to `YYYY-MM-DD` server-side |
-| `name` | string | Yes | Visit record title (e.g. `Smith - Nordstrom Visit 6/11/2026`) — NOT the store/company name |
+| `name` | string | Yes | Visit record title — Door name + `-Visit ` + visit date (e.g. `Charlotte-5-Visit 6/30/2026`) |
 
 ### NetSuite Record Written
 `customrecord_cca_store_visit`
@@ -296,6 +296,8 @@ All tools are exposed via the `StoreVisitWorkflow` MCP server (Azure Functions, 
 |---|---|---|
 | `custrecord_cca_sv_immediate_actions` | string | Immediate actions taken during visit |
 | `custrecord_cca_sv_next_visit_focus` | string | Focus areas for next visit |
+| `custrecord_cca_sv_visit_summary` | string | Overall visit summary |
+| `custrecord_cca_sv_dsa_notes` | string | DSA notes |
 | `custrecord_cca_sv_caseline_space` | number | Caseline space count |
 | `custrecord_cca_sv_gold_pads` | number | Gold pad count |
 | `custrecord_cca_sv_numb_pads_mens` | number | Number of men's pads |

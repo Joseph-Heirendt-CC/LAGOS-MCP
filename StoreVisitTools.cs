@@ -32,18 +32,18 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
             "doorId (Customer internal ID from lookup_door), " +
             "brandAmbassadorId (employee internal ID of the visiting BA), " +
             "visitDate (any recognizable date format, e.g. 'June 2nd 2026', '6/2/26', '2026-06-02'), " +
-            "name (title of this visit record — NOT the store or company name; the store is identified by doorId; e.g. 'Smith - Nordstrom Visit 6/11/2026'). " +
+            "name (title of this visit record — Door name concatenated with '-Visit ' and the visit date, e.g. 'Charlotte-5-Visit 6/30/2026'; the store is identified by doorId). " +
             "Returns the new record's id — pass this as recordId to update_store_visit.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("doorId",            "Customer internal ID from lookup_door", true)] string doorId,
         [McpToolProperty("brandAmbassadorId", "Employee internal ID of the visiting BA", true)] string brandAmbassadorId,
         [McpToolProperty("visitDate",         "Visit date in any recognizable format (e.g. 'June 2nd 2026', '6/2/26', '2026-06-02')", true)] string visitDate,
-        [McpToolProperty("name",              "Title of this visit record — Door concatenated with Date '-' (e.g. 'Nordstrom Visit-6/11/2026'). The store is identified by doorId.", true)] string name,
+        [McpToolProperty("name",              "Title of this visit record — Door name concatenated with '-Visit ' and the visit date (e.g. 'Charlotte-5-Visit 6/30/2026'). The store is identified by doorId.", true)] string name,
         FunctionContext context,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("name is required and cannot be empty. Provide a visit record title such as 'Nordstrom Visit-6/11/2026'.");
+            throw new ArgumentException("name is required and cannot be empty. Provide a visit record title such as 'Charlotte-5-Visit 6/30/2026'.");
         if (!long.TryParse(doorId, out _))
             throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
         if (!long.TryParse(brandAmbassadorId, out _))
@@ -122,6 +122,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         // ── Text fields ────────────────────────────────────────────────────────
         [McpToolProperty("immediateActions",                  "Immediate actions taken during the visit (free text)")] string? immediateActions,
         [McpToolProperty("nextVisitFocus",                    "Focus areas for the next visit (free text)")] string? nextVisitFocus,
+        [McpToolProperty("visitSummary",                      "Overall visit summary (free text)")] string? visitSummary,
         [McpToolProperty("sharepointUrl",                     "SharePoint folder URL for this visit's documents (populated by the LLM when the SharePoint folder is created in M365)")] string? sharepointUrl,
         [McpToolProperty("presElemNotes",                     "Presentation elements notes (free text)")] string? presElemNotes,
         [McpToolProperty("additionalContacts",                "Additional store contacts (free text)")] string? additionalContacts,
@@ -151,6 +152,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("vitrineCorrectiveActions",          "Vitrine corrective actions (free text)")] string? vitrineCorrectiveActions,
         [McpToolProperty("vitrineNotes",                      "Vitrine notes (free text)")] string? vitrineNotes,
         [McpToolProperty("dsaCorrectiveActions",              "DSA corrective actions (free text)")] string? dsaCorrectiveActions,
+        [McpToolProperty("dsaNotes",                          "DSA notes (free text)")] string? dsaNotes,
         // ── Numeric fields ─────────────────────────────────────────────────────
         [McpToolProperty("caselineSpace",                     "Caseline space count")] int? caselineSpace,
         [McpToolProperty("goldPads",                          "Gold pad count")] int? goldPads,
@@ -199,6 +201,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         // Text fields
         if (immediateActions != null) body["custrecord_cca_sv_immediate_actions"] = immediateActions;
         if (nextVisitFocus   != null) body["custrecord_cca_sv_next_visit_focus"]   = nextVisitFocus;
+        if (visitSummary     != null) body["custrecord_cca_sv_visit_summary"]      = visitSummary;
         if (sharepointUrl    != null) body["custrecord_cca_sv_sharepoint_url"]     = sharepointUrl;
         if (presElemNotes                   != null) body["custrecord_cca_pres_elem_notes"]            = presElemNotes;
         if (additionalContacts              != null) body["custrecord_cca_sv_additional_contacts"]     = additionalContacts;
@@ -228,6 +231,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         if (vitrineCorrectiveActions        != null) body["custrecord_cca_sv_vitrine_correct_act"]     = vitrineCorrectiveActions;
         if (vitrineNotes                    != null) body["custrecord_cca_sv_vitrine_notes"]           = vitrineNotes;
         if (dsaCorrectiveActions            != null) body["custrecord_cca_sv_dsa_correct_act"]         = dsaCorrectiveActions;
+        if (dsaNotes                        != null) body["custrecord_cca_sv_dsa_notes"]               = dsaNotes;
 
         // Numeric fields
         if (caselineSpace  != null) body["custrecord_cca_sv_caseline_space"]  = caselineSpace;
