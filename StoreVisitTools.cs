@@ -287,6 +287,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
                 sv.custrecord_cca_sv_visit_date,
                 BUILTIN.DF(sv.custrecord_cca_sv_brand_ambassador)    AS brandAmbassador,
                 sv.custrecord_cca_sv_project,
+                BUILTIN.DF(sv.custrecord_cca_sv_visit_type) AS visitType,
                 sv.custrecord_cca_sv_visit_summary,
                 sv.custrecord_cca_sv_immediate_actions,
                 sv.custrecord_cca_sv_next_visit_focus,
