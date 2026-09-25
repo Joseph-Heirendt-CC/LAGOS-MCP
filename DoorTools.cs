@@ -2,11 +2,10 @@ using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
+using static ToolHelpers;
 
 public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> logger)
 {
-    private static string EscapeSuiteQL(string v) => v.Replace("'", "''");
-
     // ── lookup_door ────────────────────────────────────────────────────────────
 
     [Function(nameof(LookupDoor))]
@@ -14,9 +13,10 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         [McpToolTrigger("lookup_door",
             "Resolve a Door (retail account / company-type Customer) in NetSuite by one or more criteria. " +
             "Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), " +
-            "city (partial city match), or state (exact two-letter state abbreviation). " +
+            "city (partial city match), or state (exact two-letter state abbreviation) — city/state match the Door's default shipping address. " +
             "Filters to active Doors only (custentity_cca_door = T). " +
-            "Returns up to 100 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary. " +
+            "Returns up to 100 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary, " +
+            "other_lines_carried (array of other brands the Door carries). " +
             "Use the returned id as doorId in all other door and store visit tools.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("name",  "Partial company name match")] string? name,
@@ -41,15 +41,9 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         if (baId  != null) clauses.Add($"c.custentity_cca_brand_ambassador = {baId}");
         if (name  != null) clauses.Add($"LOWER(c.companyname) LIKE LOWER('%{EscapeSuiteQL(name)}%')");
-        if (city  != null) clauses.Add($"LOWER(aba.city) LIKE LOWER('%{EscapeSuiteQL(city)}%')");
-        if (state != null) clauses.Add($"LOWER(aba.state) = LOWER('{EscapeSuiteQL(state)}')");
+        if (AddressFilterClause("c", city, state) is { } addressFilter) clauses.Add(addressFilter);
 
         var where = string.Join("\n  AND ", clauses);
-
-        // Address join only needed when city/state filtering is requested
-        var addressJoin = (city != null || state != null)
-            ? "LEFT JOIN addressbookaddress aba ON aba.entity = c.id AND aba.defaultbilling = 'T'"
-            : string.Empty;
 
         var query = $"""
             SELECT TOP 100
@@ -60,13 +54,13 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 BUILTIN.DF(c.salesrep)           AS wholesaleBrandManager,
                 BUILTIN.DF(c.custentity_cca_planner)       AS planner,
                 BUILTIN.DF(c.subsidiary)                   AS subsidiary,
+                BUILTIN.DF(c.custentity_cca_other_lines_carried) AS other_lines_carried,
                 c.custentity_cca_visit_hours,
                 c.custentity_cca_door_number,
                 c.custentity_cca_sharepoint_url,
                 dt.name AS door_type,
                 t.name  AS territory
             FROM customer c
-            {addressJoin}
             LEFT OUTER JOIN customlist_cca_door_type dt
                 ON dt.id = c.custentity_cca_door_type
             LEFT OUTER JOIN customlist_cca_ba_territory t
@@ -77,6 +71,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         logger.LogInformation("lookup_door: baId={BaId} name={Name} city={City} state={State}", baId, name, city, state);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
+        SplitMultiSelectColumn(result, "other_lines_carried");
         return result.ToJsonString();
     }
 
@@ -112,21 +107,15 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         if (baId  != null) clauses.Add($"c.custentity_cca_brand_ambassador = {baId}");
         if (name  != null) clauses.Add($"LOWER(c.companyname) LIKE LOWER('%{EscapeSuiteQL(name)}%')");
-        if (city  != null) clauses.Add($"LOWER(aba.city) LIKE LOWER('%{EscapeSuiteQL(city)}%')");
-        if (state != null) clauses.Add($"LOWER(aba.state) = LOWER('{EscapeSuiteQL(state)}')");
+        if (AddressFilterClause("c", city, state) is { } addressFilter) clauses.Add(addressFilter);
 
         var where = string.Join("\n  AND ", clauses);
-
-        var addressJoin = (city != null || state != null)
-            ? "LEFT JOIN addressbookaddress aba ON aba.entity = c.id AND aba.defaultbilling = 'T'"
-            : string.Empty;
 
         var query = $"""
             SELECT TOP 100
                 c.id,
                 c.companyname
             FROM customer c
-            {addressJoin}
             WHERE {where}
             ORDER BY c.companyname
             """;
@@ -253,7 +242,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
     public async Task<string> GetDoorContacts(
         [McpToolTrigger("get_door_contacts",
             "Returns all active Contacts linked to a Door (retail account). " +
-            "Surfaces each contact's name, email, phone, title, and role (e.g. Sales Associate, Store Manager, Department Manager). " +
+            "Surfaces each contact's name, email, phone, title, role (e.g. Sales Associate, Store Manager, Department Manager), " +
+            "and area_of_responsibility (array of names). " +
             "Requires doorId — the Customer internal ID returned by lookup_door.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("doorId", "Customer internal ID from lookup_door", true)] string doorId,
@@ -271,7 +261,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 con.email,
                 con.phone,
                 con.title,
-                ct.name AS contact_type
+                ct.name AS contact_type,
+                BUILTIN.DF(con.custentity_cca_area_of_resp) AS area_of_responsibility
             FROM contact con
             LEFT OUTER JOIN customlist_cca_contact_type_list ct
                 ON ct.id = con.custentity_cca_contact_type
@@ -282,6 +273,53 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
 
         logger.LogInformation("get_door_contacts: doorId={DoorId}", doorId);
         var result = await client.ExecuteSuiteQLAsync(query, ct);
+        SplitMultiSelectColumn(result, "area_of_responsibility");
+        return result.ToJsonString();
+    }
+
+    // ── update_customer ────────────────────────────────────────────────────────
+
+    [Function(nameof(UpdateCustomer))]
+    public async Task<string> UpdateCustomer(
+        [McpToolTrigger("update_customer",
+            "Updates a Door (Customer) record's pad counts, linear feet, and shop attributes. " +
+            "Pass doorId and only the fields you want to update. These are the Door's own fields — " +
+            "they are tracked independently of the Store Visit pad counts written by update_store_visit. " +
+            "Total In-Case Pads is calculated and cannot be set. " +
+            "Boolean fields must be strict boolean: true or false.")]
+        ToolInvocationContext toolCall,
+        [McpToolProperty("doorId",        "Customer internal ID from lookup_door", true)] string doorId,
+        [McpToolProperty("numbPadsWomen", "Number of women's pads on the Door")] int? numbPadsWomen,
+        [McpToolProperty("goldPads",      "Number of gold pads on the Door")] int? goldPads,
+        [McpToolProperty("numbPadsMens",  "Number of men's pads on the Door")] int? numbPadsMens,
+        [McpToolProperty("linearFeet",    "Linear feet of LAGOS case space (decimal allowed, e.g. 12.5)")] string? linearFeet,
+        [McpToolProperty("lagosSafe",     "Door has a LAGOS safe (true/false)")] string? lagosSafe,
+        [McpToolProperty("shopInShop",    "Door has a LAGOS shop-in-shop (true/false)")] string? shopInShop,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        if (!long.TryParse(doorId, out _))
+            throw new ArgumentException($"doorId must be a numeric NetSuite internal ID, got: '{doorId}'");
+
+        var body = new JsonObject();
+        if (numbPadsWomen != null) body["custentity_cca_womens_pads"]     = numbPadsWomen;
+        if (goldPads      != null) body["custentity_cca_gold_pads"]       = goldPads;
+        if (numbPadsMens  != null) body["custentity_cca_lagos_mens_pads"] = numbPadsMens;
+        if (linearFeet    != null)
+        {
+            if (!double.TryParse(linearFeet, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var feet))
+                throw new ArgumentException($"linearFeet must be a number, got: '{linearFeet}'");
+            body["custentity_cca_linear_feet"] = feet;
+        }
+        AddBool(body, "custentity_cca_lagos_safe",    lagosSafe);
+        AddBool(body, "custentity_cca_shop_in_shop",  shopInShop);
+
+        if (body.Count == 0)
+            throw new ArgumentException("At least one field must be provided to update.");
+
+        logger.LogInformation("update_customer: doorId={DoorId} fieldCount={Count}", doorId, body.Count);
+        var result = await client.UpdateRecordAsync("customer", doorId, body, ct);
         return result.ToJsonString();
     }
 

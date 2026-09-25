@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
 using Microsoft.Extensions.Logging;
+using static ToolHelpers;
 
 public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVisitTools> logger)
 {
@@ -66,20 +67,6 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
 
     // ── update_store_visit ─────────────────────────────────────────────────────
 
-    // Parses a boolean string and writes a strict JSON boolean (true/false) to the update body.
-    // Accepts "true"/"false" (canonical) and "T"/"F" (legacy), case-insensitive.
-    private static void AddBool(JsonObject o, string key, string? v)
-    {
-        if (v == null) return;
-        bool parsed = v.Trim().ToUpperInvariant() switch
-        {
-            "T" or "TRUE"  => true,
-            "F" or "FALSE" => false,
-            _ => throw new ArgumentException($"'{key}' must be true or false, got: '{v}'")
-        };
-        o[key] = JsonValue.Create(parsed);
-    }
-
     [Function(nameof(UpdateStoreVisit))]
     public async Task<string> UpdateStoreVisit(
         [McpToolTrigger("update_store_visit",
@@ -89,7 +76,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         ToolInvocationContext toolCall,
         [McpToolProperty("recordId",                          "Internal ID of the store visit record (from create_store_visit or get_recent_store_visits)", true)] string recordId,
         // ── Audit booleans ─────────────────────────────────────────────────────
-        [McpToolProperty("backstockInvAudited",               "Backstock inventory audit completed (true/false)")] string? backstockInvAudited,
+        [McpToolProperty("backstockInvNotRep",                "Backstock inventory NOT represented on the sales floor (true = issue found, false = all represented)")] string? backstockInvNotRep,
         [McpToolProperty("priceAudited",                      "Price audit completed (true/false)")] string? priceAudited,
         [McpToolProperty("padProductAudit",                   "Pad product audit completed (true/false)")] string? padProductAudit,
         [McpToolProperty("presElemAudit",                     "Presentation elements audit completed (true/false)")] string? presElemAudit,
@@ -109,7 +96,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("caselineFlowIssue",                 "Caseline flow issue identified (true/false)")] string? caselineFlowIssue,
         [McpToolProperty("tarnishIssue",                      "Tarnishing issue identified (true/false)")] string? tarnishIssue,
         [McpToolProperty("vitrineIssue",                      "Vitrine issue identified (true/false)")] string? vitrineIssue,
-        [McpToolProperty("dsaIssue",                          "DSA issue identified (true/false)")] string? dsaIssue,
+        [McpToolProperty("dsaUpdOppWin",                      "DSA update, opportunity, or win identified (true/false)")] string? dsaUpdOppWin,
         [McpToolProperty("markOppIdentified",                 "Marketing opportunity identified (true/false)")] string? markOppIdentified,
         [McpToolProperty("qualIssue",                         "Quality issue identified (true/false)")] string? qualIssue,
         [McpToolProperty("prodTagsIssue",                     "Product tags issue identified (true/false)")] string? prodTagsIssue,
@@ -118,14 +105,24 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("spaceLocationMoved",                "Space/location moved issue (true/false)")] string? spaceLocationMoved,
         [McpToolProperty("incentiveRunning",                  "Incentive currently running (true/false)")] string? incentiveRunning,
         [McpToolProperty("storeAwareIncentive",               "Store aware of incentive (true/false)")] string? storeAwareIncentive,
-        [McpToolProperty("competitorIncentives",              "Competitor incentives present (true/false)")] string? competitorIncentives,
+        [McpToolProperty("updCompLand",                       "Updates to the competitor landscape observed (true/false)")] string? updCompLand,
+        [McpToolProperty("collectionsSoldDown",               "Collections sold down (true/false)")] string? collectionsSoldDown,
+        [McpToolProperty("piecesReqRtvRefurb",                "Pieces requiring RTV for refurbishment (true/false)")] string? piecesReqRtvRefurb,
         // ── Text fields ────────────────────────────────────────────────────────
         [McpToolProperty("immediateActions",                  "Immediate actions taken during the visit (free text)")] string? immediateActions,
         [McpToolProperty("nextVisitFocus",                    "Focus areas for the next visit (free text)")] string? nextVisitFocus,
         [McpToolProperty("visitSummary",                      "Overall visit summary (free text)")] string? visitSummary,
         [McpToolProperty("sharepointUrl",                     "SharePoint folder URL for this visit's documents (populated by the LLM when the SharePoint folder is created in M365)")] string? sharepointUrl,
         [McpToolProperty("presElemNotes",                     "Presentation elements notes (free text)")] string? presElemNotes,
-        [McpToolProperty("additionalContacts",                "Additional store contacts (free text)")] string? additionalContacts,
+        [McpToolProperty("teamMembersEngaged",                "Store team members engaged during the visit (free text)")] string? teamMembersEngaged,
+        [McpToolProperty("miscNotes",                         "Miscellaneous notes (free text)")] string? miscNotes,
+        [McpToolProperty("backstockNotRepNotes",              "Backstock not represented notes (free text)")] string? backstockNotRepNotes,
+        [McpToolProperty("competitorLandscapeNotes",          "Updates to competitor landscape notes (free text)")] string? competitorLandscapeNotes,
+        [McpToolProperty("updCompLandCorrAct",                "Updates to competitor landscape corrective actions (free text, max 300 characters)")] string? updCompLandCorrAct,
+        [McpToolProperty("collectionsSoldDownCorrAct",        "Collections sold down corrective actions (free text)")] string? collectionsSoldDownCorrAct,
+        [McpToolProperty("piecesReqRtvRefurbNotes",           "Pieces requiring RTV refurbishment notes (free text)")] string? piecesReqRtvRefurbNotes,
+        [McpToolProperty("rtvRefurbCorrAct",                  "RTV for refurbishment corrective actions (free text)")] string? rtvRefurbCorrAct,
+        [McpToolProperty("spaceLocationCorrAct",              "Space/location corrective actions (free text)")] string? spaceLocationCorrAct,
         [McpToolProperty("backstockInvCorrectiveActions",     "Backstock inventory corrective actions (free text)")] string? backstockInvCorrectiveActions,
         [McpToolProperty("caselineFlowCorrectiveActions",     "Caseline flow corrective actions (free text)")] string? caselineFlowCorrectiveActions,
         [McpToolProperty("caselineFlowNotes",                 "Caseline flow notes (free text)")] string? caselineFlowNotes,
@@ -158,15 +155,18 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolProperty("goldPads",                          "Gold pad count")] int? goldPads,
         [McpToolProperty("numbPadsMens",                      "Number of men's pads")] int? numbPadsMens,
         [McpToolProperty("numbPadsWomen",                     "Number of women's pads")] int? numbPadsWomen,
-        [McpToolProperty("totalGoldPads",                     "Total gold pads")] int? totalGoldPads,
-        [McpToolProperty("totalPads",                         "Total pads")] int? totalPads,
         FunctionContext context,
         CancellationToken ct)
     {
+        if (!long.TryParse(recordId, out _))
+            throw new ArgumentException($"recordId must be a numeric NetSuite internal ID, got: '{recordId}'");
+        if (updCompLandCorrAct?.Length > 300)
+            throw new ArgumentException($"updCompLandCorrAct is limited to 300 characters, got {updCompLandCorrAct.Length}.");
+
         var body = new JsonObject();
 
         // Audit booleans
-        AddBool(body, "custrecord_cca_sv_backstock_inv_audited",  backstockInvAudited);
+        AddBool(body, "custrecord_cca_sv_backstock_inv_not_rep",  backstockInvNotRep);
         AddBool(body, "custrecord_cca_sv_price_audited",          priceAudited);
         AddBool(body, "custrecord_cca_sv_pad_product_audit",      padProductAudit);
         AddBool(body, "custrecord_cca_sv_pres_elem_audit",        presElemAudit);
@@ -187,7 +187,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         AddBool(body, "custrecord_cca_sv_caseline_flow_issue",    caselineFlowIssue);
         AddBool(body, "custrecord_cca_sv_tarnish_issue",          tarnishIssue);
         AddBool(body, "custrecord_cca_sv_vitrine_issue_identi",   vitrineIssue);
-        AddBool(body, "custrecord_cca_sv_dsa_issue_idenified",    dsaIssue);
+        AddBool(body, "custrecord_cca_sv_dsa_upd_opp_win",        dsaUpdOppWin);
         AddBool(body, "custrecord_cca_sv_mark_opp_identified",    markOppIdentified);
         AddBool(body, "custrecord_cca_sv_qual_iss_id",            qualIssue);
         AddBool(body, "custrecord_cca_sv_prod_tags_issue",        prodTagsIssue);
@@ -196,7 +196,9 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         AddBool(body, "custrecord_cca_sv_space_location_moved",   spaceLocationMoved);
         AddBool(body, "custrecord_cca_sv_incentive_running",      incentiveRunning);
         AddBool(body, "custrecord_cca_sv_store_aware_incentive",  storeAwareIncentive);
-        AddBool(body, "custrecord_cca_sv_competitor_incentives",  competitorIncentives);
+        AddBool(body, "custrecord_cca_sv_upd_comp_land",          updCompLand);
+        AddBool(body, "custrecord_cca_sv_collect_sold_down",      collectionsSoldDown);
+        AddBool(body, "custrecord_cca_sv_piece_req_rtv_refurb",   piecesReqRtvRefurb);
 
         // Text fields
         if (immediateActions != null) body["custrecord_cca_sv_immediate_actions"] = immediateActions;
@@ -204,7 +206,15 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         if (visitSummary     != null) body["custrecord_cca_sv_visit_summary"]      = visitSummary;
         if (sharepointUrl    != null) body["custrecord_cca_sv_sharepoint_url"]     = sharepointUrl;
         if (presElemNotes                   != null) body["custrecord_cca_pres_elem_notes"]            = presElemNotes;
-        if (additionalContacts              != null) body["custrecord_cca_sv_additional_contacts"]     = additionalContacts;
+        if (teamMembersEngaged              != null) body["custrecord_cca_sv_team_mem_engaged"]        = teamMembersEngaged;
+        if (miscNotes                       != null) body["custrecord_cca_sv_misc_notes"]              = miscNotes;
+        if (backstockNotRepNotes            != null) body["custrecord_cca_sv_backstock_not_rep_note"]  = backstockNotRepNotes;
+        if (competitorLandscapeNotes        != null) body["custrecord_cca_sv_upd_comp_land_notes"]     = competitorLandscapeNotes;
+        if (updCompLandCorrAct              != null) body["custrecord_cca_sv_upd_comp_land_corr_act"]  = updCompLandCorrAct;
+        if (collectionsSoldDownCorrAct      != null) body["custrecord_cca_sv_collect_sold_down_corr"]  = collectionsSoldDownCorrAct;
+        if (piecesReqRtvRefurbNotes         != null) body["custrecord_cca_sv_piece_rtv_refurb_notes"]  = piecesReqRtvRefurbNotes;
+        if (rtvRefurbCorrAct                != null) body["custrecord_cca_sv_rtv_refurb_corr_act"]     = rtvRefurbCorrAct;
+        if (spaceLocationCorrAct            != null) body["custrecord_cca_sv_space_loc_corr_act"]      = spaceLocationCorrAct;
         if (backstockInvCorrectiveActions   != null) body["custrecord_cca_sv_backstock_inv_corr_act"]  = backstockInvCorrectiveActions;
         if (caselineFlowCorrectiveActions   != null) body["custrecord_cca_sv_case_flow_correct_act"]   = caselineFlowCorrectiveActions;
         if (caselineFlowNotes               != null) body["custrecord_cca_sv_caseline_flow_notes"]     = caselineFlowNotes;
@@ -238,8 +248,6 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         if (goldPads       != null) body["custrecord_cca_sv_gold_pads"]       = goldPads;
         if (numbPadsMens   != null) body["custrecord_cca_sv_numb_pads_mens"]  = numbPadsMens;
         if (numbPadsWomen  != null) body["custrecord_cca_sv_numb_pads_women"] = numbPadsWomen;
-        if (totalGoldPads  != null) body["custrecord_cca_sv_total_gold_pads"] = totalGoldPads;
-        if (totalPads      != null) body["custrecord_cca_sv_total_pads"]      = totalPads;
 
         if (body.Count == 0)
             throw new ArgumentException("At least one field must be provided to update.");
@@ -256,7 +264,7 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
         [McpToolTrigger("get_recent_store_visits",
             "Retrieves the most recent Store Visit records for a Door, used to generate the Pre-Visit Summary. " +
             "Returns visit date, type, brand ambassador, project, visit summary, immediate actions, next visit focus, " +
-            "sharepoint URL, total pads, total gold pads, and corrective-action notes across all issue categories per visit. " +
+            "sharepoint URL, total pads, team members engaged, and notes and corrective actions across all issue categories per visit. " +
             "Use the returned id as recordId when calling update_store_visit on an existing record. " +
             "Requires doorId from lookup_door. Optional limit (default 5, max 50).")]
         ToolInvocationContext toolCall,
@@ -285,7 +293,6 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
                 sv.custrecord_cca_sv_next_visit_focus,
                 sv.custrecord_cca_sv_sharepoint_url,
                 sv.custrecord_cca_sv_total_pads,
-                sv.custrecord_cca_sv_total_gold_pads,
                 sv.custrecord_cca_sv_backstock_inv_corr_act,
                 sv.custrecord_cca_sv_pad_prod_correct_act,
                 sv.custrecord_cca_sv_fix_layout_correct_act,
@@ -297,8 +304,16 @@ public class StoreVisitTools(INetSuiteBusinessAppClient client, ILogger<StoreVis
                 sv.custrecord_cca_sv_mark_mater_correct_act,
                 sv.custrecord_cca_sv_vitrine_correct_act,
                 sv.custrecord_cca_sv_dsa_correct_act,
+                sv.custrecord_cca_sv_upd_comp_land_corr_act,
+                sv.custrecord_cca_sv_collect_sold_down_corr,
+                sv.custrecord_cca_sv_rtv_refurb_corr_act,
+                sv.custrecord_cca_sv_space_loc_corr_act,
                 sv.custrecord_cca_pres_elem_notes,
-                sv.custrecord_cca_sv_additional_contacts,
+                sv.custrecord_cca_sv_team_mem_engaged,
+                sv.custrecord_cca_sv_misc_notes,
+                sv.custrecord_cca_sv_backstock_not_rep_note,
+                sv.custrecord_cca_sv_upd_comp_land_notes,
+                sv.custrecord_cca_sv_piece_rtv_refurb_notes,
                 sv.custrecord_cca_sv_caseline_flow_notes,
                 sv.custrecord_cca_sv_comp_vis_merch_notes,
                 sv.custrecord_cca_sv_fixture_layout_notes,
