@@ -22,6 +22,12 @@ public static class ToolHelpers
         o[key] = JsonValue.Create(parsed);
     }
 
+    // Returns the rows of a SuiteQL result, or throws with NetSuite's error when the query failed
+    // (ExecuteSuiteQLAsync returns the error body, which has no items array).
+    public static JsonArray RequireItems(JsonNode result, string what) =>
+        result["items"] as JsonArray
+            ?? throw new InvalidOperationException($"{what} query failed: {result.ToJsonString()}");
+
     // Resolves display names (e.g. "Store Manager") to internal IDs in a NetSuite custom list.
     // Matching is case-insensitive; throws with the valid names if any value doesn't match.
     public static async Task<List<string>> ResolveListValueIds(
@@ -29,7 +35,7 @@ public static class ToolHelpers
     {
         var result = await client.ExecuteSuiteQLAsync(
             $"SELECT id, name FROM {listScriptId} WHERE isinactive = 'F'", ct);
-        var items = (result["items"] as JsonArray ?? new JsonArray()).OfType<JsonObject>().ToList();
+        var items = RequireItems(result, listScriptId).OfType<JsonObject>().ToList();
 
         var ids = new List<string>();
         foreach (var name in names)

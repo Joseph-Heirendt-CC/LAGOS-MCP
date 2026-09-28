@@ -8,8 +8,7 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
 {
     private const string ContactTypeList = "customlist_cca_contact_type_list";
 
-    // TODO: confirm script ID of the "Area of Responsibility List" custom list in NetSuite.
-    private const string AreaOfRespList = "customlist_cca_area_of_resp";
+    private const string AreaOfRespList = "customlist_cca_area_of_responsibility";
 
     private const string AreaOfRespDescription =
         "Comma-separated Area of Responsibility names (from get_area_of_responsibility_options), replacing any existing " +
@@ -42,8 +41,7 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
         [McpToolTrigger("create_contact",
             "Creates a new Contact linked to a Door (retail account). " +
             "Required: doorId (Customer internal ID from lookup_door), firstName, lastName. " +
-            "Optional: email, phone, title (job title), contactType (e.g. Sales Associate, Store Manager, Department Manager), " +
-            "areaOfResponsibility (comma-separated names). " +
+            "Optional: email, phone, title (job title), areaOfResponsibility (comma-separated names). " +
             "The contact's subsidiary is set automatically from the Door. " +
             "If an active contact with the same email already exists on the Door, no record is created — use update_contact instead. " +
             "Returns the new contact's id.")]
@@ -54,7 +52,6 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
         [McpToolProperty("email",       "Contact email address")] string? email,
         [McpToolProperty("phone",       "Main phone number")] string? phone,
         [McpToolProperty("title",       "Job title")] string? title,
-        [McpToolProperty("contactType", "Contact role, e.g. Sales Associate, Store Manager, Department Manager")] string? contactType,
         [McpToolProperty("areaOfResponsibility", AreaOfRespDescription)] string? areaOfResponsibility,
         FunctionContext context,
         CancellationToken ct)
@@ -68,7 +65,7 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
         // doesn't match its company's.
         var doorResult = await client.ExecuteSuiteQLAsync(
             $"SELECT c.id, c.subsidiary FROM customer c WHERE c.id = {doorId} AND c.custentity_cca_door = 'T'", ct);
-        var door = (doorResult["items"] as JsonArray)?.FirstOrDefault()
+        var door = RequireItems(doorResult, "Door lookup").FirstOrDefault()
             ?? throw new ArgumentException($"No Door found with id '{doorId}'. Use lookup_door to find a valid doorId.");
         var subsidiaryId = door["subsidiary"]?.ToString();
 
@@ -81,7 +78,7 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
                   AND con.isinactive = 'F'
                   AND LOWER(con.email) = LOWER('{EscapeSuiteQL(email.Trim())}')
                 """, ct);
-            var existing = (dupResult["items"] as JsonArray)?.FirstOrDefault();
+            var existing = RequireItems(dupResult, "Duplicate contact").FirstOrDefault();
             if (existing != null)
                 throw new ArgumentException(
                     $"An active contact with email '{email}' already exists on this Door " +
@@ -98,8 +95,6 @@ public class ContactTools(INetSuiteBusinessAppClient client, ILogger<ContactTool
         if (email  != null) body["email"] = email.Trim();
         if (phone  != null) body["phone"] = phone;
         if (title  != null) body["title"] = title;
-        if (contactType != null)
-            body["custentity_cca_contact_type"] = await ContactTypeRef(contactType, ct);
         if (areaOfResponsibility != null)
             body["custentity_cca_area_of_resp"] = await BuildMultiSelect(client, AreaOfRespList, areaOfResponsibility, "areaOfResponsibility", ct);
 

@@ -39,9 +39,13 @@ public class NetSuiteBusinessAppClient : INetSuiteBusinessAppClient
             var result = await PostAsync("/api/netsuiteSuiteqlQuery", payload, ct);
             var obj = result as JsonObject;
 
-            if (obj?["items"] is JsonArray items)
-                foreach (var item in items)
-                    allItems.Add(item?.DeepClone());
+            // No items array means NetSuite rejected the query (bad table/column, permissions).
+            // Return its error verbatim rather than an empty result that looks like "no rows".
+            if (obj?["items"] is not JsonArray items)
+                return result;
+
+            foreach (var item in items)
+                allItems.Add(item?.DeepClone());
 
             totalResults = obj?["totalResults"]?.GetValue<int>() ?? allItems.Count;
 

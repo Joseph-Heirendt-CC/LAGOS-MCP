@@ -323,7 +323,6 @@ Returns `id` and `name` for each active value in the Area of Responsibility cust
 | `email` | string | No | |
 | `phone` | string | No | Main phone |
 | `title` | string | No | Job title |
-| `contactType` | string | No | Display name from `customlist_cca_contact_type_list` (e.g. `Store Manager`); resolved to its internal ID. An unknown name returns the list of valid values. |
 | `areaOfResponsibility` | string | No | Comma-separated display names from the Area of Responsibility custom list, resolved to internal IDs at call time. Multi-select — written as the complete selection. An unknown name returns the list of valid values. |
 
 ### Behavior
@@ -343,7 +342,6 @@ Returns `id` and `name` for each active value in the Area of Responsibility cust
 | `email` | `email` |
 | `phone` | `phone` |
 | `title` | `title` |
-| `custentity_cca_contact_type` | `{ id: <resolved contactType> }` |
 | `custentity_cca_area_of_resp` | `{ items: [{ id }, …] }` (resolved areaOfResponsibility) |
 
 ---
@@ -362,7 +360,7 @@ Returns `id` and `name` for each active value in the Area of Responsibility cust
 | `email` | string | No | `email` |
 | `phone` | string | No | `phone` |
 | `title` | string | No | `title` |
-| `contactType` | string | No | `custentity_cca_contact_type` (resolved by name, as in `create_contact`) |
+| `contactType` | string | No | `custentity_cca_contact_type` (resolved by name against `customlist_cca_contact_type_list`) |
 | `areaOfResponsibility` | string | No | `custentity_cca_area_of_resp` — comma-separated names; **replaces** the full selection (include existing values from `get_door_contacts` to keep them; empty string clears) |
 | `isInactive` | boolean | No | `isInactive` — `true` deactivates a contact who has left the store |
 
