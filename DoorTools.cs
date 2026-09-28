@@ -6,6 +6,25 @@ using static ToolHelpers;
 
 public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> logger)
 {
+    private const string OtherLinesList = "customlist_cca_other_lines";
+
+    // ── get_other_lines_options ────────────────────────────────────────────────
+
+    [Function(nameof(GetOtherLinesOptions))]
+    public async Task<string> GetOtherLinesOptions(
+        [McpToolTrigger("get_other_lines_options",
+            "Returns the valid Other Lines Carried values (other brands a Door carries) as id/name pairs. " +
+            "Call before update_customer to present the options; pass the chosen names as otherLinesCarried.")]
+        ToolInvocationContext toolCall,
+        FunctionContext context,
+        CancellationToken ct)
+    {
+        logger.LogInformation("get_other_lines_options");
+        var result = await client.ExecuteSuiteQLAsync(
+            $"SELECT id, name FROM {OtherLinesList} WHERE isinactive = 'F' ORDER BY id", ct);
+        return result.ToJsonString();
+    }
+
     // ── lookup_door ────────────────────────────────────────────────────────────
 
     [Function(nameof(LookupDoor))]
@@ -282,19 +301,20 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
     [Function(nameof(UpdateCustomer))]
     public async Task<string> UpdateCustomer(
         [McpToolTrigger("update_customer",
-            "Updates a Door (Customer) record's pad counts, linear feet, and shop attributes. " +
+            "Updates a Door (Customer) record's pad counts, linear feet, and other lines carried. " +
             "Pass doorId and only the fields you want to update. These are the Door's own fields — " +
             "they are tracked independently of the Store Visit pad counts written by update_store_visit. " +
             "Total In-Case Pads is calculated and cannot be set. " +
-            "Boolean fields must be strict boolean: true or false.")]
+            "otherLinesCarried replaces the Door's full selection — include existing values (from lookup_door) to keep them.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("doorId",        "Customer internal ID from lookup_door", true)] string doorId,
         [McpToolProperty("numbPadsWomen", "Number of women's pads on the Door")] int? numbPadsWomen,
         [McpToolProperty("goldPads",      "Number of gold pads on the Door")] int? goldPads,
         [McpToolProperty("numbPadsMens",  "Number of men's pads on the Door")] int? numbPadsMens,
         [McpToolProperty("linearFeet",    "Linear feet of LAGOS case space (decimal allowed, e.g. 12.5)")] string? linearFeet,
-        [McpToolProperty("lagosSafe",     "Door has a LAGOS safe (true/false)")] string? lagosSafe,
-        [McpToolProperty("shopInShop",    "Door has a LAGOS shop-in-shop (true/false)")] string? shopInShop,
+        [McpToolProperty("otherLinesCarried",
+            "Comma-separated Other Lines Carried names (from get_other_lines_options), replacing any existing " +
+            "selection (empty string clears). An unrecognized name returns the list of valid values.")] string? otherLinesCarried,
         FunctionContext context,
         CancellationToken ct)
     {
@@ -312,8 +332,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 throw new ArgumentException($"linearFeet must be a number, got: '{linearFeet}'");
             body["custentity_cca_linear_feet"] = feet;
         }
-        AddBool(body, "custentity_cca_lagos_safe",    lagosSafe);
-        AddBool(body, "custentity_cca_shop_in_shop",  shopInShop);
+        if (otherLinesCarried != null)
+            body["custentity_cca_other_lines_carried"] = await BuildMultiSelect(client, OtherLinesList, otherLinesCarried, "otherLinesCarried", ct);
 
         if (body.Count == 0)
             throw new ArgumentException("At least one field must be provided to update.");

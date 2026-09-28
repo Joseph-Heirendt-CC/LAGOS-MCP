@@ -18,6 +18,7 @@ Conventions:
 | [get_open_tasks_for_door](#get_open_tasks_for_door) | `DoorTools.cs` | Read |
 | [get_tasks_for_store_visits](#get_tasks_for_store_visits) | `DoorTools.cs` | Read |
 | [get_event_and_training_history](#get_event_and_training_history) | `DoorTools.cs` | Read |
+| [get_other_lines_options](#get_other_lines_options) | `DoorTools.cs` | Read |
 | [update_customer](#update_customer) | `DoorTools.cs` | Write |
 | [get_area_of_responsibility_options](#get_area_of_responsibility_options) | `ContactTools.cs` | Read |
 | [create_contact](#create_contact) | `ContactTools.cs` | Write |
@@ -67,7 +68,7 @@ Conventions:
 | `c.salesrep` | `wholesalebrandmanager` (display value) |
 | `c.custentity_cca_planner` | `planner` (display value) |
 | `c.subsidiary` | `subsidiary` (display value) |
-| `c.custentity_cca_other_lines_carried` | `other_lines_carried` — array of display names (multi-select, "Other Lines List"); `[]` when empty |
+| `c.custentity_cca_other_lines_carried` | `other_lines_carried` — array of display names (multi-select, `customlist_cca_other_lines`); `[]` when empty |
 | `c.custentity_cca_visit_hours` | `custentity_cca_visit_hours` |
 | `c.custentity_cca_door_number` | `custentity_cca_door_number` |
 | `c.custentity_cca_sharepoint_url` | `custentity_cca_sharepoint_url` |
@@ -278,10 +279,19 @@ Returns `id`, `title` (`tr.name`), `trainingdate`, `brandambassador` (display va
 
 ---
 
+## get_other_lines_options
+
+**File:** `DoorTools.cs`
+**Purpose:** Return the valid Other Lines Carried values so the agent can present a pick list before `update_customer`. No parameters. Queried live on every call.
+
+Returns `id` and `name` for each active value in `customlist_cca_other_lines`, ordered by `id`.
+
+---
+
 ## update_customer
 
 **File:** `DoorTools.cs`
-**Purpose:** Update a Door (Customer) record's pad counts, linear feet, and shop attributes. Only supplied fields are changed. These fields are tracked independently of the Store Visit pad counts — `update_store_visit` does not write to the Door.
+**Purpose:** Update a Door (Customer) record's pad counts, linear feet, and other lines carried. Only supplied fields are changed. These fields are tracked independently of the Store Visit pad counts — `update_store_visit` does not write to the Door.
 
 ### NetSuite Record Updated
 `customer`
@@ -293,10 +303,9 @@ Returns `id`, `title` (`tr.name`), `trainingdate`, `brandambassador` (display va
 | `goldPads` | integer | No | `custentity_cca_gold_pads` |
 | `numbPadsMens` | integer | No | `custentity_cca_lagos_mens_pads` |
 | `linearFeet` | decimal (string input) | No | `custentity_cca_linear_feet` |
-| `lagosSafe` | boolean | No | `custentity_cca_lagos_safe` |
-| `shopInShop` | boolean | No | `custentity_cca_shop_in_shop` |
+| `otherLinesCarried` | string | No | `custentity_cca_other_lines_carried` — comma-separated names from `customlist_cca_other_lines`, resolved to internal IDs; **replaces** the full selection (include existing values from `lookup_door` to keep them; empty string clears). An unknown name returns the list of valid values. |
 
-Not writable: `custentity_cca_total_in_case_pads` (calculated). Not yet supported: `custentity_cca_other_lines_carried` — pending the Other Lines List script ID.
+Not writable: `custentity_cca_total_in_case_pads` (calculated).
 
 ---
 
