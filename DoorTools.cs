@@ -32,16 +32,16 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         [McpToolTrigger("lookup_door",
             "Resolve a Door (retail account / company-type Customer) in NetSuite by one or more criteria. " +
             "Supply at least one of: baId (Brand Ambassador employee internal ID, numeric), name (partial company name match), " +
-            "city (partial city match), or state (exact two-letter state abbreviation) — city/state match the Door's default shipping address. " +
+            "city (partial city match), or state (two-letter abbreviation or full name) — city/state match the Door's default shipping or billing address. " +
             "Filters to active Doors only (custentity_cca_door = T). " +
-            "Returns up to 100 matches with: id, entityId, companyName, brandAmbassador, wbm, planner, subsidiary, " +
+            "Returns up to 100 matches with: id, entityId, companyName, city, state (default shipping address), brandAmbassador, wbm, planner, subsidiary, " +
             "other_lines_carried (array of other brands the Door carries). " +
             "Use the returned id as doorId in all other door and store visit tools.")]
         ToolInvocationContext toolCall,
         [McpToolProperty("name",  "Partial company name match")] string? name,
         [McpToolProperty("baId",  "Brand Ambassador employee internal ID (numeric NetSuite ID)")] string? baId,
-        [McpToolProperty("city",  "Partial city match")] string? city,
-        [McpToolProperty("state", "Exact two-letter state abbreviation")] string? state,
+        [McpToolProperty("city",  "Partial city match against the default shipping or billing address")] string? city,
+        [McpToolProperty("state", "US state — two-letter abbreviation (e.g. NC) or full name, matched against the default shipping or billing address")] string? state,
         FunctionContext context,
         CancellationToken ct)
     {
@@ -69,6 +69,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 c.id,
                 c.entityid,
                 c.companyname,
+                ship.city,
+                ship.state,
                 BUILTIN.DF(c.custentity_cca_brand_ambassador) AS brandAmbassador,
                 BUILTIN.DF(c.salesrep)           AS wholesaleBrandManager,
                 BUILTIN.DF(c.custentity_cca_planner)       AS planner,
@@ -80,6 +82,10 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
                 dt.name AS door_type,
                 t.name  AS territory
             FROM customer c
+            LEFT OUTER JOIN customeraddressbook shipab
+                ON shipab.entity = c.id AND shipab.defaultshipping = 'T'
+            LEFT OUTER JOIN customeraddressbookentityaddress ship
+                ON ship.nkey = shipab.addressbookaddress
             LEFT OUTER JOIN customlist_cca_door_type dt
                 ON dt.id = c.custentity_cca_door_type
             LEFT OUTER JOIN customlist_cca_ba_territory t
@@ -107,8 +113,8 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         ToolInvocationContext toolCall,
         [McpToolProperty("name",  "Partial company name match")] string? name,
         [McpToolProperty("baId",  "Brand Ambassador employee internal ID (numeric NetSuite ID)")] string? baId,
-        [McpToolProperty("city",  "Partial city match")] string? city,
-        [McpToolProperty("state", "Exact two-letter state abbreviation")] string? state,
+        [McpToolProperty("city",  "Partial city match against the default shipping or billing address")] string? city,
+        [McpToolProperty("state", "US state — two-letter abbreviation (e.g. NC) or full name, matched against the default shipping or billing address")] string? state,
         FunctionContext context,
         CancellationToken ct)
     {
@@ -142,7 +148,7 @@ public class DoorTools(INetSuiteBusinessAppClient client, ILogger<DoorTools> log
         logger.LogInformation("lookup_door_for_ui_selection: baId={BaId} name={Name} city={City} state={State}", baId, name, city, state);
 
         var result  = await client.ExecuteSuiteQLAsync(query, ct);
-        var items   = result["items"] as JsonArray ?? new JsonArray();
+        var items   = RequireItems(result, "Door lookup");
         var choices = new JsonArray();
 
         foreach (var item in items)

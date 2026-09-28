@@ -82,18 +82,50 @@ public static class ToolHelpers
         }
     }
 
-    // Builds an EXISTS clause matching city (partial) and/or state (exact) against the entity's
-    // default shipping address. An EXISTS subquery (rather than a join) keeps entities that have
-    // no default shipping address from affecting other filters.
+    // Builds an EXISTS clause matching city (partial) and/or state against the customer's default
+    // shipping or default billing address (customeraddressbook → customeraddressbookentityaddress).
+    // An EXISTS subquery (rather than a join) avoids duplicate rows when both addresses match.
     // City and state must match on the same address. Returns null when neither is supplied.
-    public static string? AddressFilterClause(string entityAlias, string? city, string? state)
+    public static string? AddressFilterClause(string customerAlias, string? city, string? state)
     {
         if (city == null && state == null) return null;
 
-        var conditions = new List<string> { $"aba.entity = {entityAlias}.id", "aba.defaultshipping = 'T'" };
-        if (city  != null) conditions.Add($"LOWER(aba.city) LIKE LOWER('%{EscapeSuiteQL(city)}%')");
-        if (state != null) conditions.Add($"LOWER(aba.state) = LOWER('{EscapeSuiteQL(state)}')");
+        var conditions = new List<string>
+        {
+            $"cab.entity = {customerAlias}.id",
+            "(cab.defaultshipping = 'T' OR cab.defaultbilling = 'T')"
+        };
+        if (city  != null) conditions.Add($"LOWER(addr.city) LIKE LOWER('%{EscapeSuiteQL(city.Trim())}%')");
+        if (state != null) conditions.Add($"UPPER(addr.state) = '{NormalizeState(state)}'");
 
-        return $"EXISTS (SELECT 1 FROM addressbookaddress aba WHERE {string.Join(" AND ", conditions)})";
+        return "EXISTS (SELECT 1 FROM customeraddressbook cab " +
+               "INNER JOIN customeraddressbookentityaddress addr ON addr.nkey = cab.addressbookaddress " +
+               $"WHERE {string.Join(" AND ", conditions)})";
     }
+
+    // Accepts a two-letter US state/territory abbreviation or its full name (case-insensitive)
+    // and returns the abbreviation NetSuite stores on addresses.
+    public static string NormalizeState(string state)
+    {
+        var s = state.Trim();
+        if (s.Length == 2 && StateNames.ContainsValue(s.ToUpperInvariant())) return s.ToUpperInvariant();
+        if (StateNames.TryGetValue(s, out var abbr)) return abbr;
+        throw new ArgumentException($"'{state}' is not a recognized US state. Use a two-letter abbreviation (e.g. 'NC') or full name.");
+    }
+
+    private static readonly Dictionary<string, string> StateNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Alabama"] = "AL", ["Alaska"] = "AK", ["Arizona"] = "AZ", ["Arkansas"] = "AR", ["California"] = "CA",
+        ["Colorado"] = "CO", ["Connecticut"] = "CT", ["Delaware"] = "DE", ["District of Columbia"] = "DC",
+        ["Florida"] = "FL", ["Georgia"] = "GA", ["Hawaii"] = "HI", ["Idaho"] = "ID", ["Illinois"] = "IL",
+        ["Indiana"] = "IN", ["Iowa"] = "IA", ["Kansas"] = "KS", ["Kentucky"] = "KY", ["Louisiana"] = "LA",
+        ["Maine"] = "ME", ["Maryland"] = "MD", ["Massachusetts"] = "MA", ["Michigan"] = "MI", ["Minnesota"] = "MN",
+        ["Mississippi"] = "MS", ["Missouri"] = "MO", ["Montana"] = "MT", ["Nebraska"] = "NE", ["Nevada"] = "NV",
+        ["New Hampshire"] = "NH", ["New Jersey"] = "NJ", ["New Mexico"] = "NM", ["New York"] = "NY",
+        ["North Carolina"] = "NC", ["North Dakota"] = "ND", ["Ohio"] = "OH", ["Oklahoma"] = "OK", ["Oregon"] = "OR",
+        ["Pennsylvania"] = "PA", ["Rhode Island"] = "RI", ["South Carolina"] = "SC", ["South Dakota"] = "SD",
+        ["Tennessee"] = "TN", ["Texas"] = "TX", ["Utah"] = "UT", ["Vermont"] = "VT", ["Virginia"] = "VA",
+        ["Washington"] = "WA", ["West Virginia"] = "WV", ["Wisconsin"] = "WI", ["Wyoming"] = "WY",
+        ["Puerto Rico"] = "PR", ["Guam"] = "GU", ["U.S. Virgin Islands"] = "VI"
+    };
 }

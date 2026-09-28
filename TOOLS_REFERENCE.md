@@ -38,8 +38,8 @@ Conventions:
 |---|---|---|---|
 | `name` | string | At least one required | Partial company name match |
 | `baId` | string | At least one required | Brand Ambassador employee internal ID (numeric) |
-| `city` | string | At least one required | Partial city match against the Door's **default shipping** address |
-| `state` | string | At least one required | Exact two-letter state abbreviation against the Door's **default shipping** address |
+| `city` | string | At least one required | Partial city match against the Door's **default shipping or default billing** address |
+| `state` | string | At least one required | US state as a two-letter abbreviation (`NC`) or full name (`North Carolina`), normalized to the abbreviation; matched against the Door's **default shipping or default billing** address. An unrecognized state returns an error. |
 
 ### NetSuite Tables
 | Table | Alias | Join Condition |
@@ -47,7 +47,9 @@ Conventions:
 | `customer` | `c` | Primary |
 | `customlist_cca_door_type` | `dt` | `dt.id = c.custentity_cca_door_type` |
 | `customlist_cca_ba_territory` | `t` | `t.id = c.custentity_cca_territory` |
-| `addressbookaddress` | `aba` | `EXISTS` subquery on `aba.entity = c.id AND aba.defaultshipping = 'T'` — only when `city` or `state` supplied |
+| `customeraddressbook` | `shipab` | `LEFT JOIN` on `shipab.entity = c.id AND shipab.defaultshipping = 'T'` (returned city/state) |
+| `customeraddressbookentityaddress` | `ship` | `LEFT JOIN` on `ship.nkey = shipab.addressbookaddress` (returned city/state) |
+| `customeraddressbook` + `customeraddressbookentityaddress` | `cab` / `addr` | `EXISTS` subquery on `cab.entity = c.id AND (cab.defaultshipping = 'T' OR cab.defaultbilling = 'T')`, joined `addr.nkey = cab.addressbookaddress` — only when `city` or `state` supplied |
 
 ### Filter Fields
 | Field | Condition |
@@ -56,7 +58,7 @@ Conventions:
 | `c.isinactive` | `= 'F'` (active only) |
 | `c.custentity_cca_brand_ambassador` | `= baId` (when supplied) |
 | `c.companyname` | `LIKE '%name%'` (when supplied) |
-| `aba.city` / `aba.state` | Default shipping address matches `LIKE '%city%'` and/or `= state` (when supplied) |
+| `addr.city` / `addr.state` | Default shipping or billing address matches `LIKE '%city%'` and/or `= <state abbreviation>` (when supplied); city and state must match on the same address. Doors with neither default address never match a city/state search. |
 
 ### Returned Fields
 | NetSuite Field | Returned As |
@@ -64,6 +66,8 @@ Conventions:
 | `c.id` | `id` |
 | `c.entityid` | `entityid` |
 | `c.companyname` | `companyname` |
+| `ship.city` | `city` (default shipping address) |
+| `ship.state` | `state` (default shipping address) |
 | `c.custentity_cca_brand_ambassador` | `brandambassador` (display value) |
 | `c.salesrep` | `wholesalebrandmanager` (display value) |
 | `c.custentity_cca_planner` | `planner` (display value) |
